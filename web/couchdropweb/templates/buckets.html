@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block body %}
+
+<script>
+    window.toggle_nav("buckets_link");
+</script>
+
+<style>
+    .mui-checkbox>label>input[type=checkbox] {
+         position: relative !important;
+    }
+</style>
+<div class="body-container">
+    <div class="mui-col-md-8 mui-col-sm-offset-2">
+        <h2><i class="fa fa-hdd-o"></i> Storage Buckets</h2>
+        <hr>
+        <div class="mui-panel">
+            <form method="POST">
+                <legend>Amazon S3</legend>
+
+                <div class="mui-checkbox">
+                    <label>
+                        <input name="endpoint__amazon_s3_enabled" type="checkbox" {% if account.endpoint__amazon_s3_enabled %} CHECKED {%endif%}>
+                        Enabled
+                    </label>
+                </div>
+
+                <div class="mui-textfield">
+                    <input type="text" placeholder="Access Key" name="endpoint__amazon_s3_access_key_id"
+                           value="{{ account.endpoint__amazon_s3_access_key_id }}">
+                </div>
+                <div class="mui-textfield">
+                    <input type="text" placeholder="Access Secret" name="endpoint__amazon_s3_access_secret_key"
+                           value="{{ account.endpoint__amazon_s3_access_secret_key }}">
+                </div>
+                <div class="mui-textfield">
+                    <input type="text" placeholder="Bucket" name="endpoint__amazon_s3_bucket"
+                           value="{{ account.endpoint__amazon_s3_bucket }}">
+                </div>
+                <button type="submit" class="mui-btn mui-btn--raised">Save</button>
+            </form>
+        </div>
+
+        <div class="mui-panel">
+            <form method="POST">
+                <legend>Dropbox</legend>
+                <div class="mui-checkbox">
+                    <label>
+                        <input name="endpoint__dropbox_enabled" type="checkbox" {% if account.endpoint__dropbox_enabled %} CHECKED {%endif%}>
+                        Enabled
+                    </label>
+                </div>
+
+                <button type="submit" class="mui-btn mui-btn--raised">Save and Activate</button>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+
+{% endblock %}

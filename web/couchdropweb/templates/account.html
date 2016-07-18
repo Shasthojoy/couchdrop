@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block body %}
+
+<script>
+    window.toggle_nav("accounts_link");
+</script>
+
+<div class="body-container">
+    <div class="mui-row">
+        <div class="mui-col-md-8 mui-col-sm-offset-2">
+            <h2><i class="fa fa-cog"></i> Account Configuration</h2>
+            <hr>
+            <div class="mui-panel">
+                <form method="post">
+                    <legend>Account Settings</legend>
+                    <div class="mui-textfield">
+                        <input type="text" name="username" placeholder="Username" disabled value="{{ account.username }}">
+                    </div>
+                    <div class="mui-textfield">
+                        <input type="email" name="email_address" placeholder="" value="{{ account.email_address }}">
+                    </div>
+                    <div class="mui-textfield">
+                        <input type="password" name="password" placeholder="Password">
+                    </div>
+                    <div class="mui-textfield">
+                        <input type="password" name="password2" placeholder="Password">
+                    </div>
+                    <button type="submit" class="mui-btn mui-btn--raised">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

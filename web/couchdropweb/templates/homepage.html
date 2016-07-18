@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block body %}
+<script>
+    window.toggle_nav("home_link");
+</script>
+
+<div class="body-container">
+    {% if not account.endpoint__amazon_s3_enabled and not account.endpoint__dropbox_enabled %}
+    <div class="mui-row">
+        <div class="mui-col-md-11">
+            <div class="mui-panel">
+                It looks like you have no storage buckets configured. Before you can use Couchdrop you need to link your
+                S3 or Dropbox account.
+                <br>
+                <br>
+                <a href="/buckets" class="mui-btn mui-btn--primary">Configure Storage</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <style>
+        .infobox {
+            border: 1px solid #e7e7e7;
+            background-color: #F7F7F7;
+            border-radius: 3px;
+            margin-left: 10px;
+            margin-right: 10px;
+            padding-top: 30px;
+            padding-bottom: 30px;
+        }
+
+        .infobox > .metric {
+            font-size: 33px;
+            text-align: center;
+        }
+
+        .infobox > .desc {
+            font-size: 15px;
+            text-align: center;
+        }
+    </style>
+
+    {% if audit | length > 0 %}
+    <div class="mui-row">
+        <div class="mui-col-md-11 ">
+            <div class="mui-row">
+                <div class="mui-col-md-4 infobox">
+                    <div class="metric">{{ audit | length}}</div>
+                    <div class="desc">Files Uploaded</div>
+                </div>
+                <div class="mui-col-md-4 infobox">
+                    <div class="metric">{{ credentials | length}}</div>
+                    <div class="desc">Credential Sets</div>
+                </div>
+                <div class="mui-col-md-4">
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    <div class="mui-row">
+        <div class="mui-col-md-11 ">
+            <h2><i class="fa fa-bars"></i> Logs and Activity</h2>
+            <hr>
+
+            {% if audit | length == 0 %}
+            <div class="mui-panel">
+                You have not yet uploaded any files yet.
+                <br>
+                <br>
+                <a href="/upload" class="mui-btn mui-btn--primary">Learn about uploading</a>
+            </div>
+            {% endif %}
+
+            {% if audit | length > 0 %}
+            <table class="mui-table mui-table--bordered">
+                <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Time</th>
+                    <th>Account</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for entry in audit %}
+                <tr>
+                    <td><a href="/download/{{entry.id}}">{{entry.filename}}</a></td>
+                    <td>{{entry.time}}</td>
+                    <td>{{entry.uploader}}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {%endif%}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

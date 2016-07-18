@@ -1,0 +1,9 @@
+*.pyc
+*.idea
+*.jar
+*.war
+*.ear
+*.class
+endpoints/ssh/target
+*.zip
+*.iml
