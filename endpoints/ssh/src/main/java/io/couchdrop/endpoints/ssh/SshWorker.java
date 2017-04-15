@@ -2,12 +2,18 @@ package io.couchdrop.endpoints.ssh;
 
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Channel;
+import org.apache.sshd.common.KeyPairProvider;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.Session;
 import org.apache.sshd.common.file.FileSystemAware;
 import org.apache.sshd.common.file.FileSystemFactory;
 import org.apache.sshd.common.file.FileSystemView;
+import org.apache.sshd.common.file.SshFile;
 import org.apache.sshd.common.file.nativefs.NativeFileSystemView;
+import org.apache.sshd.common.file.nativefs.NativeSshFile;
+import org.apache.sshd.common.file.nativefs.NativeSshFileNio;
+import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
+import org.apache.sshd.common.scp.ScpHelper;
 import org.apache.sshd.common.util.Buffer;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
@@ -41,9 +47,34 @@ public class SshWorker implements PasswordAuthenticator {
             new File(dir).mkdir();
             Map<String, String> roots = new HashMap<String, String>();
             roots.put("/", dir);
-            return new NativeFileSystemView(session.getUsername(), roots, "/");
+            return new BetterNativeFileSystemView(session.getUsername(), roots, "/");
         }
     }
+
+    class BetterNativeSshFileNio extends NativeSshFileNio {
+
+        public BetterNativeSshFileNio(NativeFileSystemView nativeFileSystemView, String fileName, File file, String userName) {
+            super(nativeFileSystemView, fileName, file, userName);
+        }
+
+        @Override
+        public String toString() {
+            return super.file.getAbsolutePath();
+        }
+    }
+
+    class BetterNativeFileSystemView extends NativeFileSystemView {
+        public BetterNativeFileSystemView(String userName, Map<String, String> roots, String current) {
+            super(userName, roots, current);
+        }
+
+        @Override
+        public NativeSshFile createNativeSshFile(String name, File file, String userName) {
+            name = deNormalizeSeparateChar(name);
+            return new BetterNativeSshFileNio(this, name, file, userName);
+        }
+    }
+
 
     private static final Session.AttributeKey<ApiAccessToken> ATTRIBUTE__GRANTED_TOKEN = new Session.AttributeKey<ApiAccessToken>() {
         @Override
@@ -58,9 +89,55 @@ public class SshWorker implements PasswordAuthenticator {
             super(command);
         }
 
+        public String getPath(){
+            return path;
+        }
+
         public ExitCallback getExitCallback() {
             return this.callback;
         }
+
+        public void run() {
+            int exitValue = ScpHelper.OK;
+            String exitMessage = null;
+            ScpHelper helper = new ScpHelper(in, out, root);
+            try {
+                if (optT) {
+                    if(path.equals(".") || !path.contains("/")){
+                        helper.receive(root.getFile(path), optR, optD, optP);
+
+                    }else{
+                        SshFile directory = root.getFile(path);
+                        String fullDirectoryPath = directory.toString();
+                        File targetDirectory = new File(fullDirectoryPath);
+                        targetDirectory.mkdirs();
+                        helper.receive(directory, optR, optD, optP);
+                    }
+
+                } else if (optF) {
+                    helper.send(Collections.singletonList(path), optR, optP);
+                } else {
+                    throw new IOException("Unsupported mode");
+                }
+            } catch (IOException e) {
+                try {
+                    exitValue = ScpHelper.ERROR;
+                    exitMessage = e.getMessage() == null ? "" : e.getMessage();
+                    out.write(exitValue);
+                    out.write(exitMessage.getBytes());
+                    out.write('\n');
+                    out.flush();
+                } catch (IOException e2) {
+                    // Ignore
+                }
+                log.info("Error in scp command", e);
+            } finally {
+                if (callback != null) {
+                    callback.onExit(exitValue, exitMessage);
+                }
+            }
+        }
+
     }
 
     class ScpCommandDecorator implements Command, Runnable, FileSystemAware {
@@ -78,25 +155,34 @@ public class SshWorker implements PasswordAuthenticator {
                 this.real_callback = exitCallback;
             }
 
+            private boolean findFiles(String rootPath, List<File> ret) {
+                File current = new File(rootPath);
+                for (File file : current.listFiles()){
+                    if (file.isDirectory()){
+                        findFiles(file.getPath(), ret);
+                    }else{
+                        ret.add(file);
+                    }
+                }
+
+                return false;
+            }
+
             private void upload_file() {
+                System.out.println(scp_command.getPath());
+
                 /* Pull the token from our environment and create a path */
                 String auth_token = env.getEnv().get(ATTRIBUTE__GRANTED_TOKEN.toString());
                 String path = String.format("/%s/%s", tempStoragePath, auth_token);
 
                 /* Upload the files*/
-                File couchdrop_api_token = new File(path);
-                File[] files = couchdrop_api_token.listFiles();
-                assert files != null;
-                for (File file : files) {
-                    CouchDropClient.upload(apiEndpoint, auth_token, file);
-                }
+                List<File> filesToUpload = new LinkedList<>();
+                findFiles(path, filesToUpload);
 
-                /* Now that we are done writing the file, we can delete the entire directory */
-                for(File file : couchdrop_api_token.listFiles()){
+                for (File file : filesToUpload) {
+                    CouchDropClient.upload(apiEndpoint, auth_token, file);
                     file.delete();
                 }
-
-                couchdrop_api_token.delete();
             }
 
             public void onExit(int exitValue) {
@@ -189,7 +275,7 @@ public class SshWorker implements PasswordAuthenticator {
                 new ChannelSessionDecoratorFactory()
         ));
         server.setCommandFactory(new ScpCommandFactoryDecorator());
-        server.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(hostKeyPath));
+        server.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(hostKeyPath, "RSA"));
         server.setPasswordAuthenticator(this);
         return server;
     }

@@ -8,8 +8,12 @@ import org.apache.sshd.SshServer;
 public class SshEndpoint {
 
     public static void main(String[] args) throws Exception {
-        io.couchdrop.endpoints.ssh.SshWorker serverb = new io.couchdrop.endpoints.ssh.SshWorker();
-        SshServer sshServer = serverb.createSshServer(5022, "/server/keys/keys.ser", "/server/tmp", "https://api.couchdrop.io");
+        String RSA_KEY = System.getenv("SSH_KEY");
+        String TMP_DIR = System.getenv("SSH_TMP_DIR");
+        String API_ENDPOINT = System.getenv("SSH_API_ENDPOINT");
+
+        io.couchdrop.endpoints.ssh.SshWorker server = new io.couchdrop.endpoints.ssh.SshWorker();
+        SshServer sshServer = server.createSshServer(5022, RSA_KEY, TMP_DIR, API_ENDPOINT);
         sshServer.start();
 
         while (true) {
