@@ -1,6 +1,5 @@
 package io.couchdrop.endpoints.ssh;
 
-import com.sun.xml.internal.ws.util.StreamUtils;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Channel;
 import org.apache.sshd.common.KeyPairProvider;
@@ -13,29 +12,16 @@ import org.apache.sshd.common.file.SshFile;
 import org.apache.sshd.common.file.nativefs.NativeFileSystemView;
 import org.apache.sshd.common.file.nativefs.NativeSshFile;
 import org.apache.sshd.common.file.nativefs.NativeSshFileNio;
-import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
 import org.apache.sshd.common.scp.ScpHelper;
 import org.apache.sshd.common.util.Buffer;
 import org.apache.sshd.server.*;
-import org.apache.sshd.server.auth.CachingPublicKeyAuthenticator;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.ScpCommand;
 import org.apache.sshd.server.command.ScpCommandFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
-import org.apache.sshd.server.session.ServerSession;
 
 import java.io.*;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.RSAPublicKeySpec;
 import java.util.*;
-
-import static sun.plugin2.util.SystemUtil.decodeBase64;
 
 public class SshWorker {
     private String tempStoragePath;
