@@ -1,4 +1,6 @@
 import json
+import os
+
 from werkzeug.security import generate_password_hash
 
 from couchdropservice.model import Account
@@ -6,6 +8,8 @@ from couchdropservice.tests.base_tester import BaseTester
 
 
 class RoutesAccount__TestCase(BaseTester):
+
+
     def test_register(self):
         rv = self.app.post(
             "/register",
@@ -59,6 +63,103 @@ class RoutesAccount__TestCase(BaseTester):
 
         assert rv.status_code == 200
         assert json.loads(rv.data)["token"]
+
+    def test_authenticate__get_pub__no_key(self):
+        os.environ["COUCHDROP_SERVICE__SERVICE_TOKEN"] = "key"
+
+        account = Account()
+        account.username = "michael"
+        account.email_address = "michael@couchdrop.io"
+        self.persist([account])
+
+        rv = self.app.post(
+            "/authenticate/get/pub",
+            data={
+                "username": "michael",
+                "service_token": "key",
+            }
+        )
+
+        assert rv.status_code == 403
+
+    def test_authenticate__get_pub__key(self):
+        os.environ["COUCHDROP_SERVICE__SERVICE_TOKEN"] = "key"
+
+        account = Account()
+        account.username = "michael"
+        account.email_address = "michael@couchdrop.io"
+        account.endpoint__valid_public_key= "publickey"
+        self.persist([account])
+
+        rv = self.app.post(
+            "/authenticate/get/pub",
+            data={
+                "username": "michael",
+                "service_token": "key",
+            }
+        )
+
+        assert rv.status_code == 200
+        assert json.loads(rv.data) == {
+            "public_key": "publickey"
+        }
+
+    def test_authenticate__get_pub__key_invalid_service_token(self):
+        os.environ["COUCHDROP_SERVICE__SERVICE_TOKEN"] = "key"
+
+        account = Account()
+        account.username = "michael"
+        account.email_address = "michael@couchdrop.io"
+        account.endpoint__valid_public_key= "publickey"
+        self.persist([account])
+
+        rv = self.app.post(
+            "/authenticate/get/pub",
+            data={
+                "username": "michael",
+                "service_token": "dudes",
+            }
+        )
+
+        assert rv.status_code == 403
+
+
+    def test_authenticate__get_token(self):
+        os.environ["COUCHDROP_SERVICE__SERVICE_TOKEN"] = "key"
+
+        account = Account()
+        account.username = "michael"
+        account.email_address = "michael@couchdrop.io"
+        self.persist([account])
+
+        rv = self.app.post(
+            "/authenticate/get/token",
+            data={
+                "username": "michael",
+                "service_token": "key",
+            }
+        )
+
+        assert rv.status_code == 200
+
+
+    def test_authenticate__get_token__invalid(self):
+        os.environ["COUCHDROP_SERVICE__SERVICE_TOKEN"] = "key"
+
+        account = Account()
+        account.username = "michael"
+        account.email_address = "michael@couchdrop.io"
+        self.persist([account])
+
+        rv = self.app.post(
+            "/authenticate/get/token",
+            data={
+                "username": "michael",
+                "service_token": "invalidkey",
+            }
+        )
+
+        assert rv.status_code == 403
 
     def test_authenticate__invalid_password(self):
         account = Account()

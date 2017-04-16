@@ -26,15 +26,15 @@ public class CouchDropPublicKeyAuthenticator implements PublickeyAuthenticator {
     private String apiToken;
 
     public CouchDropPublicKeyAuthenticator(String apiEndpoint, String apiToken) {
-        this.apiEndpoint =apiEndpoint;
-        this.apiToken =apiToken;
+        this.apiEndpoint = apiEndpoint;
+        this.apiToken = apiToken;
     }
 
     @Override
     public boolean authenticate(String username, PublicKey key, ServerSession session) {
         // We can set attributes here
         String allowedKey = CouchDropClient.authentication__get_allowed_public_key(this.apiEndpoint, this.apiToken, username);
-        if(allowedKey == null){
+        if (allowedKey == null) {
             return false;
         }
 
@@ -48,9 +48,9 @@ public class CouchDropPublicKeyAuthenticator implements PublickeyAuthenticator {
             BigInteger m = decodeBigInt(bb);
             RSAPublicKeySpec spec = new RSAPublicKeySpec(m, e);
             try {
-                if(KeyFactory.getInstance("RSA").generatePublic(spec).equals(key)){
+                if (KeyFactory.getInstance("RSA").generatePublic(spec).equals(key)) {
                     String token = CouchDropClient.authentication__get_token(this.apiEndpoint, this.apiToken, username);
-                    if(token != null){
+                    if (token != null) {
                         session.setAttribute(
                                 ATTRIBUTE__GRANTED_TOKEN,
                                 new SshWorker.ApiAccessToken(token)
@@ -65,27 +65,6 @@ public class CouchDropPublicKeyAuthenticator implements PublickeyAuthenticator {
 
         return false;
 
-    }
-
-    public static byte[] encode(RSAPublicKey key) {
-        try {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            byte[] name = "ssh-rsa".getBytes("US-ASCII");
-            write(name, buf);
-            write(key.getPublicExponent().toByteArray(), buf);
-            write(key.getModulus().toByteArray(), buf);
-            return buf.toByteArray();
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private static void write(byte[] str, OutputStream os) throws IOException {
-        for (int shift = 24; shift >= 0; shift -= 8)
-            os.write((str.length >>> shift) & 0xFF);
-        os.write(str);
     }
 
     private BigInteger decodeBigInt(ByteBuffer bb) {
