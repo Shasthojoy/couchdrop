@@ -180,7 +180,8 @@ public class SshWorker implements PasswordAuthenticator {
                 findFiles(path, filesToUpload);
 
                 for (File file : filesToUpload) {
-                    CouchDropClient.upload(apiEndpoint, auth_token, file);
+                    String relativePath = file.getPath().replace(path, "");
+                    CouchDropClient.upload(apiEndpoint, auth_token, file, relativePath);
                     file.delete();
                 }
             }

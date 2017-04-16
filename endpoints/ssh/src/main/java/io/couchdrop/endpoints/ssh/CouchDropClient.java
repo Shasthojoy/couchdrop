@@ -29,7 +29,7 @@ public class CouchDropClient {
         return jsonResponse.getBody().getObject().getString("token");
     }
 
-    public static void upload(String apiEndpoint, String token, File file) {
+    public static void upload(String apiEndpoint, String token, File file, String relativePath) {
         try {
             Unirest.post(apiEndpoint + "/push/upload/" + token)
                     .header("accept", "application/json")
