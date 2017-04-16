@@ -20,6 +20,8 @@ class Account(Base):
     endpoint__dropbox_access_token = Column(String)
     endpoint__dropbox_user_id = Column(String)
 
+    endpoint__valid_public_key = Column(String)
+
     def __init__(self):
         pass
 

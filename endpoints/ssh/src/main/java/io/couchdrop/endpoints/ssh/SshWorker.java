@@ -1,5 +1,6 @@
 package io.couchdrop.endpoints.ssh;
 
+import com.sun.xml.internal.ws.util.StreamUtils;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Channel;
 import org.apache.sshd.common.KeyPairProvider;
@@ -15,10 +16,8 @@ import org.apache.sshd.common.file.nativefs.NativeSshFileNio;
 import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
 import org.apache.sshd.common.scp.ScpHelper;
 import org.apache.sshd.common.util.Buffer;
-import org.apache.sshd.server.Command;
-import org.apache.sshd.server.Environment;
-import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.PasswordAuthenticator;
+import org.apache.sshd.server.*;
+import org.apache.sshd.server.auth.CachingPublicKeyAuthenticator;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.ScpCommand;
 import org.apache.sshd.server.command.ScpCommandFactory;
@@ -26,13 +25,24 @@ import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
 
 import java.io.*;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.*;
 
-public class SshWorker implements PasswordAuthenticator {
+import static sun.plugin2.util.SystemUtil.decodeBase64;
+
+public class SshWorker {
     private String tempStoragePath;
     private String apiEndpoint;
+    private String apiToken;
 
-    class ApiAccessToken {
+    static class ApiAccessToken {
         public String token;
 
         public ApiAccessToken(String granted_token) {
@@ -76,7 +86,7 @@ public class SshWorker implements PasswordAuthenticator {
     }
 
 
-    private static final Session.AttributeKey<ApiAccessToken> ATTRIBUTE__GRANTED_TOKEN = new Session.AttributeKey<ApiAccessToken>() {
+    public static final Session.AttributeKey<ApiAccessToken> ATTRIBUTE__GRANTED_TOKEN = new Session.AttributeKey<ApiAccessToken>() {
         @Override
         public String toString() {
             return "ATTRIBUTE__GRANTED_TOKEN";
@@ -264,9 +274,11 @@ public class SshWorker implements PasswordAuthenticator {
         }
     }
 
-    public SshServer createSshServer(int port, String hostKeyPath, String tempStoragePath, String apiEndpoint) {
+
+    public SshServer createSshServer(int port, String hostKeyPath, String tempStoragePath, String apiEndpoint, String apiToken) {
         this.tempStoragePath = tempStoragePath;
         this.apiEndpoint = apiEndpoint;
+        this.apiToken = apiToken;
 
         SshServer server = SshServer.setUpDefaultServer();
         server.setHost("0.0.0.0");
@@ -277,21 +289,11 @@ public class SshWorker implements PasswordAuthenticator {
         ));
         server.setCommandFactory(new ScpCommandFactoryDecorator());
         server.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(hostKeyPath, "RSA"));
-        server.setPasswordAuthenticator(this);
+
+        server.setPublickeyAuthenticator(new CouchDropPublicKeyAuthenticator(this.apiEndpoint, this.apiToken));
+        server.setPasswordAuthenticator(new CouchDropPasswordAuthenticator(this.apiEndpoint, this.apiToken));
         return server;
     }
 
 
-    public boolean authenticate(String username, String password, ServerSession session) {
-        // We can set attributes here
-        String authenticate = CouchDropClient.authenticate(apiEndpoint, username, password);
-        if (authenticate != null) {
-            session.setAttribute(
-                    ATTRIBUTE__GRANTED_TOKEN,
-                    new ApiAccessToken(authenticate)
-            );
-            return true;
-        }
-        return false;
-    }
 }

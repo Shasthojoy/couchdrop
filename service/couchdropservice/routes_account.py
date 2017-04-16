@@ -6,7 +6,7 @@ import flask
 from flask.globals import request
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from couchdropservice import application
+from couchdropservice import application, config__get
 from couchdropservice.model import Account, PushToken, TempCredentials
 
 def __internal_check_password_matches(account, supplied_password):
@@ -47,6 +47,43 @@ def push_authenticate():
         return flask.jsonify(token=new_token.token)
 
     return flask.jsonify(err="Account was invalid"), 403
+
+
+@application.route("/authenticate/get/token", methods=["POST"])
+def push_authenticate_get_token():
+    username = request.form.get("username")
+    service_token = request.form.get("service_token")
+
+    if service_token != config__get("COUCHDROP_SERVICE__SERVICE_TOKEN"):
+        return flask.jsonify(err="This route requires a service token"), 403
+
+    account = flask.g.db_session.query(Account).filter(Account.username == username).scalar()
+    if account:
+        new_token = PushToken()
+        new_token.account = account.username
+        new_token.authenticated_user = username
+        new_token.token = str(uuid.uuid4())
+        new_token.admin = True
+        flask.g.db_session.add(new_token)
+        return flask.jsonify(token=new_token.token)
+    return flask.jsonify(err="Account was invalid"), 403
+
+
+@application.route("/authenticate/get/pub", methods=["POST"])
+def push_authenticate_get_pub():
+    username = request.form.get("username")
+    service_token = request.form.get("service_token")
+
+    if service_token != config__get("COUCHDROP_SERVICE__SERVICE_TOKEN"):
+        return flask.jsonify(err="This route requires a service token"), 403
+
+    account = flask.g.db_session.query(Account).filter(Account.username == username).scalar()
+    if account:
+        if account.endpoint__valid_public_key:
+            return flask.jsonify(public_key=account.endpoint__valid_public_key)
+        return flask.jsonify(err="No public key"), 403
+    return flask.jsonify(err="Account was invalid"), 403
+
 
 
 @application.route("/register", methods=["POST"])

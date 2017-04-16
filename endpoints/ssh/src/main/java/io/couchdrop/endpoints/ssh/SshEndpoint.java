@@ -11,9 +11,10 @@ public class SshEndpoint {
         String RSA_KEY = System.getenv("COUCHDROP_SSH_");
         String TMP_DIR = System.getenv("COUCHDROP_SSH__TMP_DIR");
         String API_ENDPOINT = System.getenv("COUCHDROP_SSH__API_ENDPOINT");
+        String API_TOKEN = System.getenv("COUCHDROP_SSH__API_TOKEN");
 
         io.couchdrop.endpoints.ssh.SshWorker server = new io.couchdrop.endpoints.ssh.SshWorker();
-        SshServer sshServer = server.createSshServer(5022, RSA_KEY, TMP_DIR, API_ENDPOINT);
+        SshServer sshServer = server.createSshServer(5022, RSA_KEY, TMP_DIR, API_ENDPOINT, API_TOKEN);
         sshServer.start();
 
         while (true) {

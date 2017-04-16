@@ -40,4 +40,36 @@ public class CouchDropClient {
             e.printStackTrace();
         }
     }
+
+    public static String authentication__get_token(String apiEndpoint, String apiToken, String username) {
+        HttpResponse<JsonNode> jsonResponse = null;
+        try {
+            jsonResponse = Unirest.post(apiEndpoint + "/authenticate/get/token")
+                    .header("accept", "application/json")
+                    .field("username", username)
+                    .field("service_token", apiToken)
+                    .asJson();
+        } catch (UnirestException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        return jsonResponse.getBody().getObject().getString("token");
+    }
+
+    public static String authentication__get_allowed_public_key(String apiEndpoint, String apiToken,String username) {
+        HttpResponse<JsonNode> jsonResponse = null;
+        try {
+            jsonResponse = Unirest.post(apiEndpoint + "/authenticate/get/pub")
+                    .header("accept", "application/json")
+                    .field("username", username)
+                    .field("service_token", apiToken)
+                    .asJson();
+        } catch (UnirestException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        return jsonResponse.getBody().getObject().getString("public_key");
+    }
 }
