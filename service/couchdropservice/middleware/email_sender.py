@@ -9,6 +9,12 @@ def mandrill__send_file__email(rec, rec_name, sender_name, filename, file_object
     request = {
         "key": config__get("COUCHDROP_SERVICE__MANDRILL_API_KEY"),
         "template_name": "Received a file",
+        "template_content": [
+        {
+            "content": "example content",
+            "name": "example name"
+        }
+        ],
         "message": {
             "subject": "You received a file",
             "from_email": "noreply@couchdrop.io",
