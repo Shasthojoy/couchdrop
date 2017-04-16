@@ -34,7 +34,7 @@ public class CouchDropClient {
             Unirest.post(apiEndpoint + "/push/upload/" + token)
                     .header("accept", "application/json")
                     .field("file", file)
-                    .field("path", file.getAbsolutePath())
+                    .field("path", relativePath)
                     .asJson();
         } catch (UnirestException e) {
             e.printStackTrace();
