@@ -15,9 +15,9 @@ lock = Lock()
 
 def init_db():
     engine = create_engine(
-        config__get("SQLALCHEMY_DATABASE_URI"),
+        config__get("COUCHDROP_SERVICE__SQLALCHEMY_DATABASE_URI"),
         convert_unicode=True,
-        pool_size=int(config__get("SQLALCHEMY_POOLSIZE_MAX")),
+        pool_size=int(config__get("COUCHDROP_SERVICE__SQLALCHEMY_POOLSIZE_MAX")),
         pool_recycle=3600
     )
 

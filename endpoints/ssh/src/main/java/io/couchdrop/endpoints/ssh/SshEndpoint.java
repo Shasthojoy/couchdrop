@@ -8,9 +8,9 @@ import org.apache.sshd.SshServer;
 public class SshEndpoint {
 
     public static void main(String[] args) throws Exception {
-        String RSA_KEY = System.getenv("SSH_KEY");
-        String TMP_DIR = System.getenv("SSH_TMP_DIR");
-        String API_ENDPOINT = System.getenv("SSH_API_ENDPOINT");
+        String RSA_KEY = System.getenv("COUCHDROP_SSH_");
+        String TMP_DIR = System.getenv("COUCHDROP_SSH__TMP_DIR");
+        String API_ENDPOINT = System.getenv("COUCHDROP_SSH__API_ENDPOINT");
 
         io.couchdrop.endpoints.ssh.SshWorker server = new io.couchdrop.endpoints.ssh.SshWorker();
         SshServer sshServer = server.createSshServer(5022, RSA_KEY, TMP_DIR, API_ENDPOINT);

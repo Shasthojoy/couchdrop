@@ -26,7 +26,7 @@ class User:
 
 def authenticate(username, password):
     ret = requests.post(
-        config__get("COUCHDROP_API_URL") + "/authenticate",
+        config__get("COUCHDROP_WEB__API_URL") + "/authenticate",
         data=dict(username=username, password=password)
     )
 
@@ -37,7 +37,7 @@ def authenticate(username, password):
 
 def register(username, password, email_address):
     ret = requests.post(
-        config__get("COUCHDROP_API_URL") + "/register",
+        config__get("COUCHDROP_WEB__API_URL") + "/register",
         data=dict(username=username, password=password, email_address=email_address)
     )
 
@@ -48,7 +48,7 @@ def register(username, password, email_address):
 
 def api__get_account(token):
     ret = requests.get(
-        config__get("COUCHDROP_API_URL") + "/manage/account?token=" + token,
+        config__get("COUCHDROP_WEB__API_URL") + "/manage/account?token=" + token,
     )
 
     ret_dict = None
@@ -59,7 +59,7 @@ def api__get_account(token):
 
 def api__get_audit(token):
     ret = requests.get(
-        config__get("COUCHDROP_API_URL") + "/manage/files?token=" + token,
+        config__get("COUCHDROP_WEB__API_URL") + "/manage/files?token=" + token,
     )
 
     ret_dict = None
@@ -70,7 +70,7 @@ def api__get_audit(token):
 
 def api__get_credentials(token):
     ret = requests.get(
-        config__get("COUCHDROP_API_URL") + "/manage/credentials?token=" + token,
+        config__get("COUCHDROP_WEB__API_URL") + "/manage/credentials?token=" + token,
     )
 
     ret_dict = None
@@ -81,7 +81,7 @@ def api__get_credentials(token):
 
 def api__get_credentials_create(token):
     requests.put(
-        config__get("COUCHDROP_API_URL") + "/manage/credentials?token=" + token,
+        config__get("COUCHDROP_WEB__API_URL") + "/manage/credentials?token=" + token,
     )
 
 def api__get_credentials_delete(token, username):
@@ -92,7 +92,7 @@ def api__get_credentials_delete(token, username):
 
 def api__get_filelink(file_id, token):
     ret = requests.get(
-        config__get("COUCHDROP_API_URL") + "/manage/files/%s/download?token=%s" % (file_id, token),
+        config__get("COUCHDROP_WEB__API_URL") + "/manage/files/%s/download?token=%s" % (file_id, token),
     )
 
     ret_dict = None
@@ -103,6 +103,6 @@ def api__get_filelink(file_id, token):
 
 def api__set_account(token, account):
     requests.post(
-        config__get("COUCHDROP_API_URL") + "/manage/account?token=" + token,
+        config__get("COUCHDROP_WEB__API_URL") + "/manage/account?token=" + token,
         data=json.dumps(account)
     )

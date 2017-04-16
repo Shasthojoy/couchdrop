@@ -133,8 +133,8 @@ def upload():
 
 def get_dropbox_auth_flow(web_app_session):
     return DropboxOAuth2Flow(
-        os.environ["DROPBOX_KEY"], os.environ["DROPBOX_SECRET"],
-        os.environ["REDIRECT_URI"], web_app_session,
+        os.environ["COUCHDROP_WEB__DROPBOX_KEY"], os.environ["COUCHDROP_WEB__DROPBOX_SECRET"],
+        os.environ["COUCHDROP_WEB__REDIRECT_URI"], web_app_session,
         "dropbox-auth-csrf-token"
     )
 

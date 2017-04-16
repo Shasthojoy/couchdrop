@@ -10,7 +10,7 @@ def config__get(key):
 
 
 application = Flask(__name__, static_folder="content")
-application.secret_key = config__get("FLASK_SESSION_SECRET")
+application.secret_key = config__get("COUCHDROP_WEB__FLASK_SESSION_SECRET")
 
 login_manager = LoginManager()
 login_manager.init_app(application)
