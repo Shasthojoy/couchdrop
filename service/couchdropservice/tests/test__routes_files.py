@@ -2,6 +2,7 @@ import datetime
 import json
 from StringIO import StringIO
 
+import requests
 from mock import mock
 
 from couchdropservice.model import PushToken, File, Account
@@ -184,3 +185,4 @@ class RoutesFiles__TestCase(BaseTester):
         assert resp.status_code == 200
         assert len(self.session.query(File).all()) == 1
         assert __upload_dropbox.called == 1
+

@@ -1,3 +1,4 @@
+import base64
 import uuid
 
 import boto3
@@ -8,6 +9,7 @@ from dropbox import dropbox
 from flask.globals import request
 
 from couchdropservice import application
+from couchdropservice.middleware.email_sender import mandrill__send_file__email
 from couchdropservice.model import Account, PushToken, File
 
 
@@ -88,15 +90,21 @@ def manage_download(file_id):
     return flask.jsonify(url=url)
 
 
-def __perform_save(account, file):
-    print "Filename was %s" % file.filename
-    if "/email:to" in file.filename:
-        # Path is something like: /email:to/michael@sphinix.com
-        target_split = file.filename.split("/")
-        email = target_split[1]
-        print "Emailing to someone : %s" % email
+def __perform_email(account, file, path):
+    # Path is something like: /email:to/michael@sphinix.com
+    target_split = path.split("/")
+    email = target_split[2]
 
-        
+    base64_encoded_file = base64.b64encode(file.read())
+    mandrill__send_file__email(
+        email, email, account.email_address, file.filename, base64_encoded_file
+    )
+
+
+def __perform_save(account, file, path):
+    print "Filename was %s" % path
+    if "/email:to" in path:
+        __perform_email(account, file, path)
     else:
         file = request.files['file']
         if account.endpoint__amazon_s3_enabled:
@@ -118,7 +126,7 @@ def push_upload(token):
         return flask.jsonify(err="File was not provided"), 500
 
     file = request.files['file']
-    __perform_save(account, file)
+    __perform_save(account, file, request.form.get("path"))
 
     audit_event = File()
     audit_event.id = str(uuid.uuid4())
