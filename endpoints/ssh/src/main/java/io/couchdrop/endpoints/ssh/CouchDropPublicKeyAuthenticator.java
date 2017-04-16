@@ -2,6 +2,7 @@ package io.couchdrop.endpoints.ssh;
 
 import org.apache.sshd.server.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
+import org.bouncycastle.util.encoders.Base64;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,7 +17,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 
 import static io.couchdrop.endpoints.ssh.SshWorker.ATTRIBUTE__GRANTED_TOKEN;
-import static sun.plugin2.util.SystemUtil.decodeBase64;
 
 /**
  * Created by michaellawson on 16/04/17.
@@ -38,7 +38,7 @@ public class CouchDropPublicKeyAuthenticator implements PublickeyAuthenticator {
             return false;
         }
 
-        byte[] decodeBuffer = decodeBase64(allowedKey);
+        byte[] decodeBuffer = Base64.decode(allowedKey);
         ByteBuffer bb = ByteBuffer.wrap(decodeBuffer);
         int len = bb.getInt();
         byte[] type = new byte[len];
