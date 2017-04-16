@@ -88,6 +88,21 @@ def manage_download(file_id):
     return flask.jsonify(url=url)
 
 
+def __perform_save(account, file):
+    print "Filename was %s" % file.filename
+    if "/email:to" in file.filename:
+        # Path is something like: /email:to/michael@sphinix.com
+        target_split = file.filename.split("/")
+        email = target_split[1]
+        print "Emailing to someone : %s" % email
+
+    else:
+        file = request.files['file']
+        if account.endpoint__amazon_s3_enabled:
+            __upload_s3(account, file)
+        elif account.endpoint__dropbox_enabled:
+            __upload_dropbox(account, file)
+
 @application.route("/push/upload/<token>", methods=["POST"])
 def push_upload(token):
     token_object = flask.g.db_session.query(PushToken).filter(PushToken.token == token).scalar()
@@ -102,11 +117,7 @@ def push_upload(token):
         return flask.jsonify(err="File was not provided"), 500
 
     file = request.files['file']
-
-    if account.endpoint__amazon_s3_enabled:
-        __upload_s3(account, file)
-    elif account.endpoint__dropbox_enabled:
-        __upload_dropbox(account, file)
+    __perform_save(account, file)
 
     audit_event = File()
     audit_event.id = str(uuid.uuid4())
