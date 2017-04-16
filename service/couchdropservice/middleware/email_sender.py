@@ -9,12 +9,6 @@ def mandrill__send_file__email(rec, rec_name, sender_name, filename, file_object
     request = {
         "key": config__get("COUCHDROP_SERVICE__MANDRILL_API_KEY"),
         "template_name": "Received a file",
-        "template_content": [
-            {
-                "name": "example name",
-                "content": "example content"
-            }
-        ],
         "message": {
             "subject": "You received a file",
             "from_email": "noreply@couchdrop.io",
@@ -46,7 +40,7 @@ def mandrill__send_file__email(rec, rec_name, sender_name, filename, file_object
             "global_merge_vars": [
                 {
                     "name": "filename",
-                    "content": ""
+                    "content": filename
                 },
                 {
                     "name": "sender",
@@ -64,6 +58,4 @@ def mandrill__send_file__email(rec, rec_name, sender_name, filename, file_object
         "async": False,
     }
 
-    rv = requests.post("https://mandrillapp.com/api/1.0/messages/send-template.json", data=json.dumps(request))
-    print rv.status_code
-    print rv.text
+    requests.post("https://mandrillapp.com/api/1.0/messages/send-template.json", data=json.dumps(request))

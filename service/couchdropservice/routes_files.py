@@ -102,7 +102,6 @@ def __perform_email(account, file, path):
 
 
 def __perform_save(account, file, path):
-    print "Filename was %s" % path
     if "/email:to" in path:
         __perform_email(account, file, path)
     else:
@@ -111,6 +110,7 @@ def __perform_save(account, file, path):
             __upload_s3(account, file)
         elif account.endpoint__dropbox_enabled:
             __upload_dropbox(account, file)
+
 
 @application.route("/push/upload/<token>", methods=["POST"])
 def push_upload(token):
