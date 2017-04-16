@@ -96,6 +96,7 @@ def __perform_save(account, file):
         email = target_split[1]
         print "Emailing to someone : %s" % email
 
+        
     else:
         file = request.files['file']
         if account.endpoint__amazon_s3_enabled:

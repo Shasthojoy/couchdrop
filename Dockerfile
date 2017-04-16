@@ -1,5 +1,5 @@
 FROM ubuntu:latest
-RUN apt-get update -y && apt-get install -y supervisor software-properties-common
+RUN apt-get update -y && apt-get install -y supervisor software-properties-common vim
 RUN add-apt-repository ppa:webupd8team/java
 RUN apt-get update
 RUN echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | debconf-set-selections

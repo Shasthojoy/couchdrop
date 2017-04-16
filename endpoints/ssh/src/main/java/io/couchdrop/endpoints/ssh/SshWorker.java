@@ -173,7 +173,7 @@ public class SshWorker implements PasswordAuthenticator {
 
                 /* Pull the token from our environment and create a path */
                 String auth_token = env.getEnv().get(ATTRIBUTE__GRANTED_TOKEN.toString());
-                String path = String.format("/%s/%s", tempStoragePath, auth_token);
+                String path = String.format("%s/%s", tempStoragePath, auth_token);
 
                 /* Upload the files*/
                 List<File> filesToUpload = new LinkedList<>();
