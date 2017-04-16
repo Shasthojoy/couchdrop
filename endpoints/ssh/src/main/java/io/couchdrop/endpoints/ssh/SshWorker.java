@@ -291,7 +291,7 @@ public class SshWorker {
         server.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(hostKeyPath, "RSA"));
 
         server.setPublickeyAuthenticator(new CouchDropPublicKeyAuthenticator(this.apiEndpoint, this.apiToken));
-        server.setPasswordAuthenticator(new CouchDropPasswordAuthenticator(this.apiEndpoint, this.apiToken));
+        server.setPasswordAuthenticator(new CouchDropPasswordAuthenticator(this.apiEndpoint));
         return server;
     }
 
