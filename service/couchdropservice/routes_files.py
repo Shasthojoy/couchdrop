@@ -37,7 +37,7 @@ def manage_audit():
 
 def __generate_dropbox_url(account, file):
     dbx = dropbox.Dropbox(account.endpoint__dropbox_access_token)
-    return dbx.files_get_temporary_link("/" + file.filename).link
+    return dbx.files_get_temporary_link(file.filename).link
 
 
 def __generate_s3_url(account, file):
