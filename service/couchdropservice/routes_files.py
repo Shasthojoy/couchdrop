@@ -30,6 +30,7 @@ def manage_audit():
             "time": file.time,
             "filename": file.filename,
             "token": file.token,
+            "storage_engine": file.storage_engine,
             "uploader": file.authenticated_user
         })
     return flask.jsonify(files=ret)

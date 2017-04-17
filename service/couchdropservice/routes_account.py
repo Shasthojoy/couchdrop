@@ -122,7 +122,9 @@ def manage_authenticate():
 
         "endpoint__dropbox_enabled": account.endpoint__dropbox_enabled,
         "endpoint__dropbox_access_token": account.endpoint__dropbox_access_token,
-        "endpoint__dropbox_user_id": account.endpoint__dropbox_user_id
+        "endpoint__dropbox_user_id": account.endpoint__dropbox_user_id,
+
+        "endpoint__valid_public_key": account.endpoint__valid_public_key
     }
 
     return flask.jsonify(account=ret)
@@ -157,5 +159,6 @@ def manage_authenticate_post():
         account.endpoint__dropbox_access_token = data.get("endpoint__dropbox_access_token")
     if data.get("endpoint__dropbox_user_id"):
         account.endpoint__dropbox_user_id = data.get("endpoint__dropbox_user_id")
-
+    if data.get("endpoint__valid_public_key"):
+        account.endpoint__valid_public_key = data.get("endpoint__valid_public_key")
     return flask.jsonify({})

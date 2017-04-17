@@ -57,6 +57,7 @@ class RoutesFiles__TestCase(BaseTester):
         file1 = File()
         file1.filename = "filename1.png"
         file1.id = "id1"
+        file1.storage_engine = "dropbox"
         file1.account = new_token.account
         file1.authenticated_user = "uploader"
         file1.time = datetime.datetime.now()
@@ -86,6 +87,7 @@ class RoutesFiles__TestCase(BaseTester):
         file1 = File()
         file1.filename = "filename1.png"
         file1.id = "id1"
+        file1.storage_engine = "s3"
         file1.account = new_token.account
         file1.authenticated_user = "uploader"
         file1.time = datetime.datetime.now()
