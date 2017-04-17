@@ -100,6 +100,7 @@ def account():
             account["password"] = request.form.get("password")
 
         account["email_address"] = request.form.get("email_address")
+        account["endpoint__valid_public_key"] = request.form.get("endpoint__valid_public_key")
         middleware.api__set_account(flask.g.current_user.get_id(), account)
     return render_template("account.html", account=account)
 
