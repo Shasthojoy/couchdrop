@@ -50,4 +50,5 @@ ALTER TABLE audit RENAME email_address TO account;
 ALTER TABLE temp_credentials RENAME account_email_address TO account;
 
 alter table accounts add column endpoint__valid_public_key varchar(1000) default '';
+alter table audit add column storage_engine varchar(1000) default '';
 

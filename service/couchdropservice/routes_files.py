@@ -87,9 +87,9 @@ def manage_download(file_id):
 
     url = ""
     account = flask.g.db_session.query(Account).filter(Account.username == token_object.account).scalar()
-    if account.endpoint__amazon_s3_enabled:
+    if file.storage_engine == "s3":
         url = __generate_s3_url(account, file)
-    elif account.endpoint__dropbox_enabled:
+    elif file.storage_engine == "dropbox":
         url = __generate_dropbox_url(account, file)
     return flask.jsonify(url=url)
 
@@ -105,15 +105,16 @@ def __perform_email(account, file, path):
     )
 
 
-def __perform_save(account, file, path):
-    if "/email:to" in path:
-        __perform_email(account, file, path)
-    else:
-        file = request.files['file']
-        if account.endpoint__amazon_s3_enabled:
-            __upload_s3(account, file, path)
-        elif account.endpoint__dropbox_enabled:
-            __upload_dropbox(account, file, path)
+def __record_audit(token, username, authenticaterd_user, path, storage_engine):
+    audit_event = File()
+    audit_event.id = str(uuid.uuid4())
+    audit_event.token = token
+    audit_event.account = username
+    audit_event.filename = path
+    audit_event.storage_engine = storage_engine
+    audit_event.time = datetime.datetime.now()
+    audit_event.authenticated_user = authenticaterd_user
+    flask.g.db_session.add(audit_event)
 
 
 @application.route("/push/upload/<token>", methods=["POST"])
@@ -130,15 +131,19 @@ def push_upload(token):
         return flask.jsonify(err="File was not provided"), 500
 
     file = request.files['file']
-    __perform_save(account, file, request.form.get("path"))
+    file_path = request.form.get("path")
 
-    audit_event = File()
-    audit_event.id = str(uuid.uuid4())
-    audit_event.token = token
-    audit_event.account = account.username
-    audit_event.filename = request.form.get("path")
-    audit_event.time = datetime.datetime.now()
-    audit_event.authenticated_user = token_object.authenticated_user
-    flask.g.db_session.add(audit_event)
+    if "/email:to" in file_path:
+        __perform_email(account, file, file_path)
+        __record_audit(token, account.username, token_object.authenticated_user, file, "email")
+    else:
+        file = request.files['file']
+        if account.endpoint__amazon_s3_enabled:
+            __upload_s3(account, file, file_path)
+            __record_audit(token, account.username, token_object.authenticated_user, file, "s3")
+
+        elif account.endpoint__dropbox_enabled:
+            __upload_dropbox(account, file, file_path)
+            __record_audit(token, account.username, token_object.authenticated_user, file, "dropbox")
 
     return flask.jsonify({})

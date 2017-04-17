@@ -47,6 +47,7 @@ class File(Base):
     filename = Column(String)
     time = Column(DATETIME)
     authenticated_user = Column(String)
+    storage_engine = Column(String)
 
     def __init__(self):
         pass
