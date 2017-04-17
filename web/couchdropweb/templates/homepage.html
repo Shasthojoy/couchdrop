@@ -78,6 +78,7 @@
                 <thead>
                 <tr>
                     <th>File</th>
+                    <th>Storage</th>
                     <th>Time</th>
                     <th>Account</th>
                 </tr>
@@ -86,6 +87,7 @@
                 {% for entry in audit %}
                 <tr>
                     <td><a href="/download/{{entry.id}}">{{entry.filename}}</a></td>
+                    <td>{{entry.storage_engine}}</td>
                     <td>{{entry.time}}</td>
                     <td>{{entry.uploader}}</td>
                 </tr>
