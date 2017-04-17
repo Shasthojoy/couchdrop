@@ -135,15 +135,14 @@ def push_upload(token):
 
     if "/email:to" in file_path:
         __perform_email(account, file, file_path)
-        __record_audit(token, account.username, token_object.authenticated_user, file, "email")
+        __record_audit(token, account.username, token_object.authenticated_user, file_path, "email")
     else:
         file = request.files['file']
         if account.endpoint__amazon_s3_enabled:
             __upload_s3(account, file, file_path)
-            __record_audit(token, account.username, token_object.authenticated_user, file, "s3")
+            __record_audit(token, account.username, token_object.authenticated_user, file_path, "s3")
 
         elif account.endpoint__dropbox_enabled:
             __upload_dropbox(account, file, file_path)
-            __record_audit(token, account.username, token_object.authenticated_user, file, "dropbox")
-
+            __record_audit(token, account.username, token_object.authenticated_user, file_path, "dropbox")
     return flask.jsonify({})
