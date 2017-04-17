@@ -55,18 +55,19 @@ def __generate_s3_url(account, file):
     return url
 
 
-def __upload_dropbox(account, file_object):
+def __upload_dropbox(account, file_object, path):
     dbx = dropbox.Dropbox(account.endpoint__dropbox_access_token)
-    dbx.files_upload(file_object, "/" + file_object.filename)
+    dbx.files_upload(file_object, path + "/" + file_object.filename)
 
-def __upload_s3(account, file_object):
+
+def __upload_s3(account, file_object, path):
     client = boto3.client(
         's3',
         aws_access_key_id=account.endpoint__amazon_s3_access_key_id,
         aws_secret_access_key=account.endpoint__amazon_s3_access_secret_key
     )
 
-    client.put_object(Bucket=account.endpoint__amazon_s3_bucket, Key=file_object.filename, Body=file_object)
+    client.put_object(Bucket=account.endpoint__amazon_s3_bucket, Key=path + "/" + file_object.filename, Body=file_object)
 
 
 @application.route("/manage/files/<file_id>/download", methods=["GET"])
@@ -107,9 +108,9 @@ def __perform_save(account, file, path):
     else:
         file = request.files['file']
         if account.endpoint__amazon_s3_enabled:
-            __upload_s3(account, file)
+            __upload_s3(account, file, path)
         elif account.endpoint__dropbox_enabled:
-            __upload_dropbox(account, file)
+            __upload_dropbox(account, file, path)
 
 
 @application.route("/push/upload/<token>", methods=["POST"])

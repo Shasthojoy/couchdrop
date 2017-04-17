@@ -4,12 +4,14 @@ from StringIO import StringIO
 
 import requests
 from mock import mock
+from werkzeug.datastructures import FileStorage
 
 from couchdropservice.model import PushToken, File, Account
 from couchdropservice.tests.base_tester import BaseTester
 
 
 class RoutesFiles__TestCase(BaseTester):
+
     def test__get_files(self):
         # Create a token
         new_token = PushToken()
@@ -155,12 +157,15 @@ class RoutesFiles__TestCase(BaseTester):
             '/push/upload/token1',
             data = {
                 'file': (StringIO('my file contents'), 'hello world.txt'),
+                'path': '/dudes/path'
             }
         )
 
         assert resp.status_code == 200
         assert len(self.session.query(File).all()) == 1
         assert __upload_s3.called == 1
+        __upload_s3.assert_called_with(mock.ANY, mock.ANY, '/dudes/path')
+
 
 
     @mock.patch('couchdropservice.routes_files.__upload_dropbox')
@@ -179,10 +184,11 @@ class RoutesFiles__TestCase(BaseTester):
             '/push/upload/token1',
             data = {
                 'file': (StringIO('my file contents'), 'hello world.txt'),
+                'path': "/dudes/path"
             }
         )
 
         assert resp.status_code == 200
         assert len(self.session.query(File).all()) == 1
         assert __upload_dropbox.called == 1
-
+        __upload_dropbox.assert_called_with(mock.ANY, mock.ANY, '/dudes/path')
