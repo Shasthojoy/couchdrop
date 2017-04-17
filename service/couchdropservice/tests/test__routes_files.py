@@ -157,14 +157,14 @@ class RoutesFiles__TestCase(BaseTester):
             '/push/upload/token1',
             data = {
                 'file': (StringIO('my file contents'), 'hello world.txt'),
-                'path': '/dudes/path'
+                'path': '/dudes/path/hello world.txt'
             }
         )
 
         assert resp.status_code == 200
         assert len(self.session.query(File).all()) == 1
         assert __upload_s3.called == 1
-        __upload_s3.assert_called_with(mock.ANY, mock.ANY, '/dudes/path')
+        __upload_s3.assert_called_with(mock.ANY, mock.ANY, '/dudes/path/hello world.txt')
 
 
 
@@ -184,11 +184,11 @@ class RoutesFiles__TestCase(BaseTester):
             '/push/upload/token1',
             data = {
                 'file': (StringIO('my file contents'), 'hello world.txt'),
-                'path': "/dudes/path"
+                'path': "/dudes/path/hello world.txt"
             }
         )
 
         assert resp.status_code == 200
         assert len(self.session.query(File).all()) == 1
         assert __upload_dropbox.called == 1
-        __upload_dropbox.assert_called_with(mock.ANY, mock.ANY, '/dudes/path')
+        __upload_dropbox.assert_called_with(mock.ANY, mock.ANY, '/dudes/path/hello world.txt')

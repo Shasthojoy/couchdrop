@@ -55,9 +55,9 @@ def __generate_s3_url(account, file):
     return url
 
 
-def __upload_dropbox(account, file_object, path):
+def __upload_dropbox(account, file_object, full_path):
     dbx = dropbox.Dropbox(account.endpoint__dropbox_access_token)
-    dbx.files_upload(file_object, path + "/" + file_object.filename)
+    dbx.files_upload(file_object, full_path)
 
 
 def __upload_s3(account, file_object, path):
@@ -67,7 +67,7 @@ def __upload_s3(account, file_object, path):
         aws_secret_access_key=account.endpoint__amazon_s3_access_secret_key
     )
 
-    client.put_object(Bucket=account.endpoint__amazon_s3_bucket, Key=path + "/" + file_object.filename, Body=file_object)
+    client.put_object(Bucket=account.endpoint__amazon_s3_bucket, Key=path, Body=file_object)
 
 
 @application.route("/manage/files/<file_id>/download", methods=["GET"])
@@ -133,7 +133,7 @@ def push_upload(token):
     audit_event.id = str(uuid.uuid4())
     audit_event.token = token
     audit_event.account = account.username
-    audit_event.filename = file.filename
+    audit_event.filename = request.form.get("path")
     audit_event.time = datetime.datetime.now()
     audit_event.authenticated_user = token_object.authenticated_user
     flask.g.db_session.add(audit_event)
