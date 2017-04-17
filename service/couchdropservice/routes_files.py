@@ -47,9 +47,10 @@ def __generate_s3_url(account, file):
         aws_secret_access_key=account.endpoint__amazon_s3_access_secret_key
     )
 
+    path = file.filename.lstrip(['/'])
     url = client.generate_presigned_url(
         'get_object',
-        Params={'Bucket': account.endpoint__amazon_s3_bucket, 'Key': file.filename},
+        Params={'Bucket': account.endpoint__amazon_s3_bucket, 'Key': path},
         ExpiresIn=100
     )
     return url
@@ -61,6 +62,8 @@ def __upload_dropbox(account, file_object, full_path):
 
 
 def __upload_s3(account, file_object, path):
+    # Without this, s3 creates a new blank folder
+    path = path.lstrip(['/'])
     client = boto3.client(
         's3',
         aws_access_key_id=account.endpoint__amazon_s3_access_key_id,
