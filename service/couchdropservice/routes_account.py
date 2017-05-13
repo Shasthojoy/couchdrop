@@ -10,7 +10,7 @@ from couchdropservice import application, config__get
 from couchdropservice.model import Account, PushToken, TempCredentials
 
 def __internal_check_password_matches(account, supplied_password):
-    if "sha1" in account.password:
+    if "sha" in account.password:
         return check_password_hash(account.password, supplied_password)
     return account.password == supplied_password
 
