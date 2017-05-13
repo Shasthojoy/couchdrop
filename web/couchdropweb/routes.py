@@ -96,7 +96,7 @@ def downloadfile(file_id):
 def account():
     account = middleware.api__get_account(flask.g.current_user.get_id())
     if request.method == "POST":
-        if request.form.get("password") == request.form.get("password2"):
+        if request.form.get("password") and request.form.get("password") == request.form.get("password2"):
             account["password"] = request.form.get("password")
 
         account["email_address"] = request.form.get("email_address")
@@ -124,12 +124,6 @@ def buckets():
         elif account["endpoint__dropbox_enabled"]:
             return redirect("/buckets/dropbox/activate")
     return render_template("buckets.html", account=account)
-
-
-@application.route("/upload")
-@login_required
-def upload():
-    return render_template("upload.html")
 
 
 def get_dropbox_auth_flow(web_app_session):
