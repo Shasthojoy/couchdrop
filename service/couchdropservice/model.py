@@ -59,3 +59,29 @@ class TempCredentials(Base):
     username = Column(String, primary_key=True)
     password = Column(String)
     account = Column(String)
+
+    public_key = Column(String)
+    permissions_mode = Column(String)
+    permissions_path = Column(String)
+
+
+class Storage(Base):
+    __tablename__ = "storage"
+
+    id = Column(String, primary_key=True)
+    account = Column(String)
+    store_type = Column(String)
+    path = Column(String)
+    permissions = Column(String)
+
+    endpoint__dropbox_access_token = Column(String)
+    endpoint__dropbox_user_id = Column(String)
+    endpoint__amazon_s3_access_key_id = Column(String)
+    endpoint__amazon_s3_access_secret_key = Column(String)
+    endpoint__amazon_s3_bucket = Column(String)
+
+    endpoint__webdav_username = Column(String)
+    endpoint__webdav_password = Column(String)
+    endpoint__webdav_hostname = Column(String)
+    endpoint__webdav_path = Column(String)
+    endpoint__webdav_protocol = Column(String)

@@ -7,8 +7,10 @@
     <script type="text/javascript" src="{{ url_for('static', filename='libs/base.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='libs/jquery.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='libs/jquery.migrate.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='libs/bootstrap.js') }}"></script>
 
     <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style/style.css') }}">
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style/bootstrap.css') }}">
 
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -71,7 +73,9 @@ window.zEmbed || function (e, t) {
 </script>
 
 <div id="sidebar-container">
-    <a class="main-menu-item p" name="p" href="/"></a>
+    <a class="main-menu-item-branding" name="p" href="/">
+        <img style="width: 52px;" src="/content/images/couchdroplogo_white.png">
+    </a>
 
     <a id="home_link" class="main-menu-item" href="/">
         <i class="fa fa-pie-chart fa-lg" aria-hidden="true"></i>
@@ -85,7 +89,7 @@ window.zEmbed || function (e, t) {
 
     <a id="credentials_link" class="main-menu-item" href="/credentials">
         <i class="fa fa-key fa-lg" aria-hidden="true"></i>
-        <span>Credentials</span>
+        <span>Keys</span>
     </a>
 
     <a id="accounts_link" class="main-menu-item" href="/account">
@@ -94,13 +98,143 @@ window.zEmbed || function (e, t) {
     </a>
 </div>
 
-<div id="body">
-    <div class="topbar-container">
-        <div style="display:inline;">couchdrop.io</div>
-        <div style="float: right;font-size: 15px;padding-right: 10px;color: #333;"><a href="/logout"><i
-                class="fa fa-sign-out" aria-hidden="true"></i></a></div>
-    </div>
+<style>
+    body {
+        margin: 0px;
+        font-feature-settings: "kern", "liga", "pnum";
+        font-family: "Open Sans", sans-serif;
+        font-size: 14px;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.35;
+    }
 
+    #body {
+        margin-left: 85px;
+    }
+
+    #topnav {
+        height: 75px;
+        background-color: #0087C9;
+    }
+
+    #middle_row {
+    }
+
+    .topnav_title {
+        color: white;
+        font-size: 19px;
+        width: 157px;
+        display: inline-table;
+        padding-top: 23px;
+        padding-left: 29px;
+        background-color: #37A1D5;
+        height: 75px;
+    }
+
+    .topnav_navitem {
+        display: inline-table;
+        padding-top: 23px;
+        padding-left: 20px;
+        height: 75px;
+    }
+
+    .topnav_navitem a {
+        color: white;
+        text-decoration: none;;
+        font-size: 15px;
+    }
+
+    .topnav_navitem_right {
+        float: right;
+        padding-right: 20px;
+        padding-top: 28px;
+        color: white;
+    }
+
+    .lowernav_title {
+        font-size: 18px;
+        padding-top: 20px;
+        padding-left: 20px;
+        display: inline-table;
+    }
+
+    .lowernav_description {
+        font-size: 14px;
+        margin-bottom: 30px;
+        padding-left: 3px;
+        display: block;
+    }
+
+    .lowernav {
+        border-bottom: solid 1px #e5e5e5;
+        margin-bottom: 30px;
+        height: 65px;
+        background-color: whitesmoke;
+    }
+
+    .right {
+        display: inline-table;
+        float: right;
+        padding-top: 3px;
+        padding-right: 9px;
+    }
+
+    #logout {
+        position: absolute;
+        right: 0px;
+        top: 0px;
+        height: 65px;
+        padding-top: 22px;
+        padding-right: 20px;
+        padding-left: 20px;
+        border-left: solid 1px #e5e5e5;
+
+        cursor: pointer;
+    }
+
+    #logout:hover {
+        background-color: #cdcdcd !important;
+        cursor: pointer;
+    }
+
+    #account_info {
+        cursor: pointer;
+        position: absolute;
+        right: 53px;
+        top: 0px;
+        height: 65px;
+        padding-top: 22px;
+        padding-right: 20px;
+        padding-left: 20px;
+        border-left: solid 1px #e5e5e5;
+    }
+
+    #account_info:hover {
+        cursor: pointer;
+        background-color: #cdcdcd !important;
+    }
+</style>
+
+<div id="logout">
+    <i class="fa fa-sign-out" aria-hidden="true"></i>
+</div>
+
+<div id="account_info">
+    {{ g.username }}
+</div>
+
+<script>
+    $("#logout").click(function(){
+        window.location = "/logout"
+    });
+
+    $("#account_info").click(function(){
+        window.location = "/account"
+    });
+
+</script>
+
+<div id="body">
     {% block body %}
     {% endblock %}
 </div>

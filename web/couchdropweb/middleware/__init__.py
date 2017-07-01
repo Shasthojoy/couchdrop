@@ -57,6 +57,34 @@ def api__get_account(token):
     return ret_dict["account"]
 
 
+def api__get_storage(token):
+    ret = requests.get(
+        config__get("COUCHDROP_WEB__API_URL") + "/manage/account/storage?token=" + token,
+    )
+
+    ret_dict = None
+    if ret.status_code == 200:
+        ret_dict = json.loads(ret.text)
+    return ret_dict["storage"]
+
+def api__put_storage(token):
+    requests.put(
+        config__get("COUCHDROP_WEB__API_URL") + "/manage/account/storage?token=" + token,
+    )
+
+def api__post_storage(token, bucket):
+    requests.post(
+        config__get("COUCHDROP_WEB__API_URL") + "/manage/account/storage?token=" + token,
+        data=json.dumps(bucket)
+    )
+
+def api__delete_storage(token, id):
+    requests.delete(
+        config__get("COUCHDROP_WEB__API_URL") + "/manage/account/storage?token=" + token,
+        data=json.dumps({"id": id})
+    )
+
+
 def api__get_audit(token):
     ret = requests.get(
         config__get("COUCHDROP_WEB__API_URL") + "/manage/files?token=" + token,
@@ -82,6 +110,11 @@ def api__get_credentials(token):
 def api__get_credentials_create(token):
     requests.put(
         config__get("COUCHDROP_WEB__API_URL") + "/manage/credentials?token=" + token,
+    )
+
+def api__get_credentials_save(token, object):
+    requests.post(
+        config__get("COUCHDROP_WEB__API_URL") + "/manage/credentials?token=" + token, data=json.dumps(object)
     )
 
 def api__get_credentials_delete(token, username):

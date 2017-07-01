@@ -52,3 +52,39 @@ ALTER TABLE temp_credentials RENAME account_email_address TO account;
 alter table accounts add column endpoint__valid_public_key varchar(1000) default '';
 alter table audit add column storage_engine varchar(1000) default '';
 
+
+create table storage (
+  id varchar(500) default null,
+  account varchar(500) DEFAULT NULL,
+  store_type varchar(100) default null,
+  path varchar(500) default '/',
+
+  endpoint__dropbox_access_token varchar(500) default '',
+  endpoint__dropbox_user_id varchar(500) default '',
+  endpoint__amazon_s3_access_key_id varchar(500) default '',
+  endpoint__amazon_s3_access_secret_key varchar(500) default '',
+
+  PRIMARY KEY (id)
+);
+
+insert into storage (id, account, store_type, endpoint__dropbox_access_token, endpoint__dropbox_user_id) (
+  select username, username, 'dropbox', endpoint__dropbox_access_token, endpoint__dropbox_user_id from accounts where endpoint__dropbox_enabled = true
+)
+
+insert into storage (id, account, store_type, endpoint__amazon_s3_access_key_id, endpoint__amazon_s3_access_secret_key) (
+  select username, username, 's3', endpoint__amazon_s3_access_key_id, endpoint__amazon_s3_access_secret_key from accounts where endpoint__amazon_s3_enabled = true
+)
+
+alter table storage add column permissions varchar(10) default 'rw';
+alter table storage add column endpoint__amazon_s3_bucket varchar(100) default '';
+
+alter table storage add column endpoint__webdav_username varchar(100) default '';
+alter table storage add column endpoint__webdav_password varchar(100) default '';
+alter table storage add column endpoint__webdav_hostname varchar(100) default '';
+alter table storage add column endpoint__webdav_path varchar(500) default '';
+alter table storage add column endpoint__webdav_protocol varchar(100) default '';
+
+alter table temp_credentials add column public_key varchar(1000) default '';
+alter table temp_credentials add column permissions_mode varchar(10) default '';
+alter table temp_credentials add column permissions_path varchar(100) default '';
+

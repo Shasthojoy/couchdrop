@@ -5,3 +5,4 @@ Flask-SQLAlchemy==2.1
 requests
 uwsgi
 dropbox==6.5.0
+webdavclient

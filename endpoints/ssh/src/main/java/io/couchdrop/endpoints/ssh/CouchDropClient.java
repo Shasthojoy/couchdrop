@@ -6,6 +6,7 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Created by michaellawson on 18/06/16.
@@ -39,6 +40,28 @@ public class CouchDropClient {
         } catch (UnirestException e) {
             e.printStackTrace();
         }
+    }
+
+    public static String download(String apiEndpoint, String token, String relativePath) throws IOException {
+        HttpResponse<JsonNode> jsonResponse = null;
+
+        try {
+            jsonResponse = Unirest.post(apiEndpoint + "/pull/download/" + token)
+                    .header("accept", "application/json")
+                    .field("path", relativePath)
+                    .asJson();
+
+            if (jsonResponse.getStatus() == 404){
+                throw new IOException(jsonResponse.getBody().getObject().getString("error"));
+            }
+
+            if (jsonResponse.getStatus() == 403){
+                throw new IOException(jsonResponse.getBody().getObject().getString("error"));
+            }
+        } catch (UnirestException e) {
+            throw new IOException("File not found or a system error occurred");
+        }
+        return jsonResponse.getBody().getObject().getString("b64_content");
     }
 
     public static String authentication__get_token(String apiEndpoint, String apiToken, String username) {

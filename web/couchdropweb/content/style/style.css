@@ -18,7 +18,7 @@
     width: 85px;
     height: 65px;
     font-size: 36px;
-    line-height: 64px;
+    padding-top: 8px;
 }
 
 .main-menu-item, a.main-menu-item {
@@ -37,9 +37,38 @@
     text-decoration: none;
 }
 
-.main-menu-item:hover {
+.main-menu-item-branding {
+    position: relative;
+    background-color: #1DB0D5;
+    color: #000;
+    border-right: 1px solid #1DB0D5;
+    border-bottom: none;
+    width: 85px;
+    height: 65px;
+    font-size: 36px;
+    padding-top: 8px;
+}
+
+.main-menu-item-branding, a.main-menu-item-branding {
+    border-bottom: 1px solid #444;
+    border-top: 0 solid #fff;
+    color: #999;
+    display: block;
+    font-size: 15px;
+    height: 64px;
+    line-height: 43px;
+    overflow: visible;
+    position: relative;
+    text-align: center;
+    width: 85px;
+    text-decoration: none;
+}
+
+
+a.main-menu-item:hover {
     background: #4c4c4c;
     color: white;
+    text-decoration: none;
 }
 
 .selected {

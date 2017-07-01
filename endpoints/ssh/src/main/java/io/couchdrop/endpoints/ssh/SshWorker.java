@@ -20,7 +20,12 @@ import org.apache.sshd.server.command.ScpCommand;
 import org.apache.sshd.server.command.ScpCommandFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
+
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class SshWorker {
@@ -85,7 +90,7 @@ public class SshWorker {
             super(command);
         }
 
-        public String getPath(){
+        public String getPath() {
             return path;
         }
 
@@ -99,10 +104,10 @@ public class SshWorker {
             ScpHelper helper = new ScpHelper(in, out, root);
             try {
                 if (optT) {
-                    if(path.equals(".") || !path.contains("/")){
+                    if (path.equals(".") || !path.contains("/")) {
                         helper.receive(root.getFile(path), optR, optD, optP);
 
-                    }else{
+                    } else {
                         SshFile directory = root.getFile(path);
                         String fullDirectoryPath = directory.toString();
                         File targetDirectory = new File(fullDirectoryPath);
@@ -111,7 +116,19 @@ public class SshWorker {
                     }
 
                 } else if (optF) {
+                    ScpCommandDecorator.PushFileUpExitCallback callback = (ScpCommandDecorator.PushFileUpExitCallback) getExitCallback();
+                    String token = callback.env.getEnv().get("ATTRIBUTE__GRANTED_TOKEN");
+
+                    String fileContents = CouchDropClient.download(apiEndpoint, token, path);
+
+                    String tmpPath = root.getFile(path).toString();
+                    File file = new File(tmpPath);
+                    byte[] bytes = Base64.decodeBase64(fileContents);
+                    FileUtils.writeByteArrayToFile(file, bytes);
+
                     helper.send(Collections.singletonList(path), optR, optP);
+                    file.delete();
+
                 } else {
                     throw new IOException("Unsupported mode");
                 }
@@ -153,10 +170,10 @@ public class SshWorker {
 
             private boolean findFiles(String rootPath, List<File> ret) {
                 File current = new File(rootPath);
-                for (File file : current.listFiles()){
-                    if (file.isDirectory()){
+                for (File file : current.listFiles()) {
+                    if (file.isDirectory()) {
                         findFiles(file.getPath(), ret);
-                    }else{
+                    } else {
                         ret.add(file);
                     }
                 }

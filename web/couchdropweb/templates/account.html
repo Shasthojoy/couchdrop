@@ -5,16 +5,20 @@
     window.toggle_nav("accounts_link");
 </script>
 
-<div class="body-container">
+<div class="lowernav">
+    <div class="lowernav_title">
+        <i class="fa fa-user"></i> Account Settings
+    </div>
+</div>
+<div class="mui-container-fluid">
     <div class="mui-row">
-        <div class="mui-col-md-8 mui-col-sm-offset-2">
-            <h2><i class="fa fa-cog"></i> Account Configuration</h2>
-            <hr>
+        <div class="mui-col-md-8">
             <div class="mui-panel">
                 <form method="post">
-                    <legend>Account Settings</legend>
+                    <legend>Settings</legend>
                     <div class="mui-textfield">
-                        <input type="text" name="username" placeholder="Username" disabled value="{{ account.username }}">
+                        <input type="text" name="username" placeholder="Username" disabled
+                               value="{{ account.username }}">
                     </div>
                     <div class="mui-textfield">
                         <input type="email" name="email_address" placeholder="" value="{{ account.email_address }}">
@@ -24,11 +28,6 @@
                     </div>
                     <div class="mui-textfield">
                         <input type="password" name="password2" placeholder="Password">
-                    </div>
-                    <br>
-                    <legend>RSA Public Key</legend>
-                    <div class="mui-textfield">
-                        <textarea placeholder="Textarea" id="endpoint__valid_public_key" name="endpoint__valid_public_key">{{account.endpoint__valid_public_key}}</textarea>
                     </div>
                     <button type="submit" class="mui-btn mui-btn--raised">Save</button>
                 </form>

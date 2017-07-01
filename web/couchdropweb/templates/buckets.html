@@ -6,56 +6,171 @@
 </script>
 
 <style>
-    .mui-checkbox>label>input[type=checkbox] {
-         position: relative !important;
+    .mui-checkbox > label > input[type=checkbox] {
+        position: relative !important;
     }
+
 </style>
-<div class="body-container">
-    <div class="mui-col-md-8 mui-col-sm-offset-2">
-        <h2><i class="fa fa-hdd-o"></i> Storage Buckets</h2>
-        <hr>
-        <div class="mui-panel">
-            <form method="POST">
-                <legend>Amazon S3</legend>
 
-                <div class="mui-checkbox">
-                    <label>
-                        <input name="endpoint__amazon_s3_enabled" type="checkbox" {% if account.endpoint__amazon_s3_enabled %} CHECKED {%endif%}>
-                        Enabled
-                    </label>
-                </div>
-
-                <div class="mui-textfield">
-                    <input type="text" placeholder="Access Key" name="endpoint__amazon_s3_access_key_id"
-                           value="{{ account.endpoint__amazon_s3_access_key_id }}">
-                </div>
-                <div class="mui-textfield">
-                    <input type="text" placeholder="Access Secret" name="endpoint__amazon_s3_access_secret_key"
-                           value="{{ account.endpoint__amazon_s3_access_secret_key }}">
-                </div>
-                <div class="mui-textfield">
-                    <input type="text" placeholder="Bucket" name="endpoint__amazon_s3_bucket"
-                           value="{{ account.endpoint__amazon_s3_bucket }}">
-                </div>
-                <button type="submit" class="mui-btn mui-btn--raised">Save</button>
-            </form>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
+<div ng-app="Buckets">
+    <div ng-controller="Main as main">
+        <div class="lowernav">
+            <div class="lowernav_title">
+                <i class="fa fa-hdd-o"></i> Storage Buckets
+            </div>
         </div>
+        <div class="mui-container-fluid">
+            <div class="lowernav_description">
+                Storage buckets provide the backend storage for your data. You can configure different storage buckets
+                under different destination paths.
+            </div>
 
-        <div class="mui-panel">
-            <form method="POST">
-                <legend>Dropbox</legend>
-                <div class="mui-checkbox">
-                    <label>
-                        <input name="endpoint__dropbox_enabled" type="checkbox" {% if account.endpoint__dropbox_enabled %} CHECKED {%endif%}>
-                        Enabled
-                    </label>
+            <form ng-submit="main.save()">
+                <div class="mui-row">
+                    <div class="mui-col-md-8">
+                        <div ng-hide="main.buckets.length">No Storage buckets configured. Click add to
+                            <a href="#" ng-click="main.add_bucket()">add</a> one.
+                        </div>
+
+                        <div class="mui-panel" ng-repeat="bucket in main.buckets">
+
+                            <legend>
+                                Bucket
+                                <button style="float:right;" type="submit"
+                                        class="mui-btn mui-btn--small mui-btn--raised"
+                                        ng-click="main.delete_bucket(bucket.id)">Delete
+                                </button>
+                            </legend>
+
+                            <div class="mui-textfield">
+                                <input type="text" placeholder="Path" ng-model="bucket.path">
+                                <label>Destination Path</label>
+                            </div>
+
+                            <div class="mui-select">
+                                <select ng-model="bucket.permissions">
+                                    <option value="r">Read Only</option>
+                                    <option value="w">Write Only</option>
+                                    <option value="rw">Read and Write</option>
+                                </select>
+                                <label>Permissions</label>
+                            </div>
+
+                            <div class="mui-select">
+                                <select ng-model="bucket.store_type">
+                                    <option value="dropbox">Dropbox</option>
+                                    <option value="s3">Amazon S3</option>
+                                    <option value="webdav">WebDav</option>
+                                </select>
+                                <label>Bucket Type</label>
+                            </div>
+
+                            <div ng-show="bucket.store_type == 'dropbox'">
+                                <div class="mui-textfield">
+                                    <input disabled type="text" placeholder="Dropbox UserId"
+                                           ng-model="bucket.endpoint__dropbox_user_id">
+                                </div>
+
+                                <button type="submit" class="mui-btn mui-btn--raised"
+                                        ng-click="main.link_dropbox(bucket.id)">Link Dropbox
+                                </button>
+                            </div>
+
+                            <div ng-show="bucket.store_type == 's3'">
+                                <div class="mui-textfield">
+                                    <input type="text" placeholder="S3 Access Key"
+                                           ng-model="bucket.endpoint__amazon_s3_access_key_id">
+                                </div>
+                                <div class="mui-textfield">
+                                    <input type="text" placeholder="S3 Access Key Secret"
+                                           ng-model="bucket.endpoint__amazon_s3_access_secret_key">
+                                </div>
+                                <div class="mui-textfield">
+                                    <input type="text" placeholder="S3 Bucket"
+                                           ng-model="bucket.endpoint__amazon_s3_bucket">
+                                </div>
+                            </div>
+
+                            <div ng-show="bucket.store_type == 'webdav'">
+                                <div class="mui-textfield">
+                                    <input type="text" placeholder="WebDav Url"
+                                           ng-model="bucket.endpoint__webdav_hostname">
+                                </div>
+                                <div class="mui-textfield">
+                                    <input type="text" placeholder="WebDav Username"
+                                           ng-model="bucket.endpoint__webdav_username">
+                                </div>
+                                <div class="mui-textfield">
+                                    <input type="password" placeholder="WebDav Password"
+                                           ng-model="bucket.endpoint__webdav_password">
+                                </div>
+                                <div class="mui-textfield">
+                                    <input type="text" placeholder="WebDav Path"
+                                           ng-model="bucket.endpoint__webdav_path">
+                                </div>
+
+                                <div class="mui-select">
+                                    <select ng-model="bucket.endpoint__webdav_protocol">
+                                        <option value="http">HTTP</option>
+                                        <option value="https">HTTPS</option>
+                                    </select>
+                                    <label>Protocol</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <button type="submit" class="mui-btn mui-btn--raised">Save Settings</button>
+                        <a href=# class="mui-btn mui-btn--raised" ng-click="main.add_bucket()">Add Bucket</a>
+                    </div>
                 </div>
-
-                <button type="submit" class="mui-btn mui-btn--raised">Save and Activate</button>
             </form>
         </div>
     </div>
 </div>
-</div>
 
+<script>
+    angular.module("Buckets", []).controller("Main", ["$http", function ($http) {
+        var self = this;
+        self.buckets = [];
+
+        var get_all_buckets = function () {
+            return $http.get("/ajax/buckets").then(
+                    function (response) {
+                        self.buckets = response.data.buckets;
+                    }, function (err) {
+                        console.log("err")
+                    }
+            )
+        };
+        get_all_buckets();
+
+        self.add_bucket = function () {
+            console.log("add_bucket");
+            $http.put("/ajax/buckets", {}).then(function (response) {
+                get_all_buckets();
+            });
+        };
+
+        self.delete_bucket = function (id) {
+            console.log("delete_bucket");
+            $http.delete("/ajax/buckets/" + id).then(function (response) {
+                get_all_buckets();
+            });
+        };
+
+        self.save = function () {
+            /* Save the guy.... */
+            $http.post("/ajax/buckets", self.buckets).then(function (response) {
+                get_all_buckets();
+            });
+        };
+
+        self.link_dropbox = function (id) {
+            /* Save the guy.... */
+            window.location = "/buckets/" + id + "/dropbox/activate";
+        };
+    }]);
+</script>
 {% endblock %}

@@ -6,7 +6,8 @@ import requests
 from mock import mock
 from werkzeug.datastructures import FileStorage
 
-from couchdropservice.model import PushToken, File, Account
+from couchdropservice.middleware import easywebdav
+from couchdropservice.model import PushToken, File, Account, Storage, TempCredentials
 from couchdropservice.tests.base_tester import BaseTester
 
 
@@ -153,7 +154,19 @@ class RoutesFiles__TestCase(BaseTester):
         new_token.account = "michael"
         new_token.token = "token1"
         new_token.admin = True
-        self.persist([account, new_token])
+
+        storage = Storage()
+        storage.id = "id1"
+        storage.account = "michael"
+        storage.path = "/"
+        storage.endpoint__amazon_s3_access_key_id = ""
+        storage.endpoint__amazon_s3_access_secret_key = ""
+        storage.endpoint__dropbox_access_token = ""
+        storage.endpoint__dropbox_user_id = ""
+        storage.store_type = "s3"
+        storage.permissions = "rw"
+
+        self.persist([account, new_token, storage])
 
         resp = self.app.post(
             '/push/upload/token1',
@@ -180,7 +193,19 @@ class RoutesFiles__TestCase(BaseTester):
         new_token.account = "michael"
         new_token.token = "token1"
         new_token.admin = True
-        self.persist([account, new_token])
+
+        storage = Storage()
+        storage.id = "id1"
+        storage.account = "michael"
+        storage.path = "/"
+        storage.endpoint__amazon_s3_access_key_id = ""
+        storage.endpoint__amazon_s3_access_secret_key = ""
+        storage.endpoint__dropbox_access_token = ""
+        storage.endpoint__dropbox_user_id = ""
+        storage.store_type = "dropbox"
+        storage.permissions = "rw"
+
+        self.persist([account, new_token, storage])
 
         resp = self.app.post(
             '/push/upload/token1',
@@ -194,3 +219,224 @@ class RoutesFiles__TestCase(BaseTester):
         assert len(self.session.query(File).all()) == 1
         assert __upload_dropbox.called == 1
         __upload_dropbox.assert_called_with(mock.ANY, mock.ANY, '/dudes/path/hello world.txt')
+
+
+    @mock.patch('couchdropservice.routes_files.__upload_dropbox')
+    @mock.patch('couchdropservice.routes_files.__upload_s3')
+    def test__upload_file__choose_path(self, __upload_s3, __upload_dropbox):
+        account = Account()
+        account.username = "michael"
+        account.endpoint__dropbox_enabled = True
+
+        new_token = PushToken()
+        new_token.account = "michael"
+        new_token.token = "token1"
+        new_token.admin = True
+
+        storage = Storage()
+        storage.id = "id1"
+        storage.account = "michael"
+        storage.path = "/dropbox/path"
+        storage.store_type = "dropbox"
+        storage.permissions = "rw"
+
+        storage2 = Storage()
+        storage2.id = "id2"
+        storage2.account = "michael"
+        storage2.path = "/s3/path"
+        storage2.store_type = "s3"
+        storage2.permissions = "rw"
+
+        storage3 = Storage()
+        storage3.id = "id3"
+        storage3.account = "michael"
+        storage3.path = "/"
+        storage3.store_type = "dropbox"
+        storage3.permissions = "rw"
+
+        self.persist([account, new_token, storage, storage2, storage3])
+
+        resp = self.app.post(
+            '/push/upload/token1',
+            data = {
+                'file': (StringIO('my file contents'), 'hello world.txt'),
+                'path': "/s3/path/hello world.txt"
+            }
+        )
+
+        assert resp.status_code == 200
+        assert len(self.session.query(File).all()) == 1
+        assert __upload_s3.called == 1
+        __upload_s3.assert_called_with(mock.ANY, mock.ANY, '/hello world.txt')
+
+
+    @mock.patch('couchdropservice.routes_files.__upload_dropbox')
+    def test__upload_file__dropbox_nopath(self, __upload_dropbox):
+        account = Account()
+        account.username = "michael"
+        account.endpoint__dropbox_enabled = True
+
+        new_token = PushToken()
+        new_token.account = "michael"
+        new_token.token = "token1"
+        new_token.admin = True
+
+        storage = Storage()
+        storage.id = "id1"
+        storage.account = "michael"
+        storage.path = "/"
+        storage.endpoint__amazon_s3_access_key_id = ""
+        storage.endpoint__amazon_s3_access_secret_key = ""
+        storage.endpoint__dropbox_access_token = ""
+        storage.endpoint__dropbox_user_id = ""
+        storage.store_type = "dropbox"
+        storage.permissions = "rw"
+
+        self.persist([account, new_token, storage])
+
+        resp = self.app.post(
+            '/push/upload/token1',
+            data = {
+                'file': (StringIO('my file contents'), 'hello world.txt'),
+                'path': "/hello world.txt"
+            }
+        )
+
+        assert resp.status_code == 200
+        assert len(self.session.query(File).all()) == 1
+        assert __upload_dropbox.called == 1
+        __upload_dropbox.assert_called_with(mock.ANY, mock.ANY, '/hello world.txt')
+
+
+    @mock.patch('couchdropservice.routes_files.__upload_dropbox')
+    def test__upload_file__dropbox__temp_user(self, __upload_dropbox):
+        account = Account()
+        account.username = "michael"
+        account.endpoint__dropbox_enabled = True
+
+        credentials = TempCredentials()
+        credentials.account = "michael"
+        credentials.username = "user-123"
+        credentials.permissions_mode= "w"
+        credentials.permissions_path= "/"
+
+        new_token = PushToken()
+        new_token.account = "michael"
+        new_token.token = "token1"
+        new_token.admin = False
+        new_token.authenticated_user = "user-123"
+
+        storage = Storage()
+        storage.id = "id1"
+        storage.account = "michael"
+        storage.path = "/"
+        storage.endpoint__amazon_s3_access_key_id = ""
+        storage.endpoint__amazon_s3_access_secret_key = ""
+        storage.endpoint__dropbox_access_token = ""
+        storage.endpoint__dropbox_user_id = ""
+        storage.store_type = "dropbox"
+        storage.permissions = "rw"
+
+        self.persist([account, new_token, storage, credentials])
+
+        resp = self.app.post(
+            '/push/upload/token1',
+            data = {
+                'file': (StringIO('my file contents'), 'hello world.txt'),
+                'path': "/hello world.txt"
+            }
+        )
+
+        assert resp.status_code == 200
+        assert len(self.session.query(File).all()) == 1
+        assert __upload_dropbox.called == 1
+        __upload_dropbox.assert_called_with(mock.ANY, mock.ANY, '/hello world.txt')
+
+
+    @mock.patch('couchdropservice.routes_files.__upload_dropbox')
+    def test__upload_file__dropbox__temp_user__wrong_permissions(self, __upload_dropbox):
+        account = Account()
+        account.username = "michael"
+        account.endpoint__dropbox_enabled = True
+
+        credentials = TempCredentials()
+        credentials.account = "michael"
+        credentials.username = "user-123"
+        credentials.permissions_mode= "r"
+        credentials.permissions_path= "/"
+
+        new_token = PushToken()
+        new_token.account = "michael"
+        new_token.token = "token1"
+        new_token.admin = False
+        new_token.authenticated_user = "user-123"
+
+        storage = Storage()
+        storage.id = "id1"
+        storage.account = "michael"
+        storage.path = "/"
+        storage.endpoint__amazon_s3_access_key_id = ""
+        storage.endpoint__amazon_s3_access_secret_key = ""
+        storage.endpoint__dropbox_access_token = ""
+        storage.endpoint__dropbox_user_id = ""
+        storage.store_type = "dropbox"
+        storage.permissions = "rw"
+
+        self.persist([account, new_token, storage, credentials])
+
+        resp = self.app.post(
+            '/push/upload/token1',
+            data = {
+                'file': (StringIO('my file contents'), 'hello world.txt'),
+                'path': "/hello world.txt"
+            }
+        )
+
+        assert resp.status_code == 403
+        assert len(self.session.query(File).all()) == 0
+        assert __upload_dropbox.called == 0
+
+
+    @mock.patch('couchdropservice.routes_files.__upload_dropbox')
+    def test__upload_file__dropbox__temp_user__wrong_permissions_path(self, __upload_dropbox):
+        account = Account()
+        account.username = "michael"
+        account.endpoint__dropbox_enabled = True
+
+        credentials = TempCredentials()
+        credentials.account = "michael"
+        credentials.username = "user-123"
+        credentials.permissions_mode= "w"
+        credentials.permissions_path= "/dudes"
+
+        new_token = PushToken()
+        new_token.account = "michael"
+        new_token.token = "token1"
+        new_token.admin = False
+        new_token.authenticated_user = "user-123"
+
+        storage = Storage()
+        storage.id = "id1"
+        storage.account = "michael"
+        storage.path = "/"
+        storage.endpoint__amazon_s3_access_key_id = ""
+        storage.endpoint__amazon_s3_access_secret_key = ""
+        storage.endpoint__dropbox_access_token = ""
+        storage.endpoint__dropbox_user_id = ""
+        storage.store_type = "dropbox"
+        storage.permissions = "rw"
+
+        self.persist([account, new_token, storage, credentials])
+
+        resp = self.app.post(
+            '/push/upload/token1',
+            data = {
+                'file': (StringIO('my file contents'), 'hello world.txt'),
+                'path': "/hello world.txt"
+            }
+        )
+
+        assert resp.status_code == 403
+        assert len(self.session.query(File).all()) == 0
+        assert __upload_dropbox.called == 0
+
