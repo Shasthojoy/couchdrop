@@ -71,10 +71,11 @@
                                     <input disabled type="text" placeholder="Dropbox UserId"
                                            ng-model="bucket.endpoint__dropbox_user_id">
                                 </div>
-
-                                <button type="submit" class="mui-btn mui-btn--raised"
-                                        ng-click="main.link_dropbox(bucket.id)">Link Dropbox
-                                </button>
+                                {% raw %}
+                                <a type="submit" class="mui-btn mui-btn--raised"
+                                        ng-href="/buckets/{{bucket.id}}/dropbox/activate">Link Dropbox
+                                </a>
+                                {% endraw %}
                             </div>
 
                             <div ng-show="bucket.store_type == 's3'">
@@ -167,10 +168,10 @@
             });
         };
 
-        self.link_dropbox = function (id) {
-            /* Save the guy.... */
-            window.location = "/buckets/" + id + "/dropbox/activate";
-        };
+//        self.link_dropbox = function (id) {
+//            /* Save the guy.... */
+//            window.location = "/buckets/" + id + "/dropbox/activate";
+//        };
     }]);
 </script>
 {% endblock %}
