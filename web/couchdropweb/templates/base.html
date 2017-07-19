@@ -102,10 +102,14 @@ window.zEmbed || function (e, t) {
     body {
         margin: 0px;
         font-feature-settings: "kern", "liga", "pnum";
-        font-family: "Open Sans", sans-serif;
+        /*font-family: "Open Sans", sans-serif;*/
+        font-family: Courier;
         font-size: 14px;
         -webkit-font-smoothing: antialiased;
         line-height: 1.35;
+    }
+
+    body {
     }
 
     #body {
@@ -155,6 +159,7 @@ window.zEmbed || function (e, t) {
         font-size: 18px;
         padding-top: 20px;
         padding-left: 20px;
+        font-family: courier;
         display: inline-table;
     }
 
@@ -224,11 +229,11 @@ window.zEmbed || function (e, t) {
 </div>
 
 <script>
-    $("#logout").click(function(){
+    $("#logout").click(function () {
         window.location = "/logout"
     });
 
-    $("#account_info").click(function(){
+    $("#account_info").click(function () {
         window.location = "/account"
     });
 

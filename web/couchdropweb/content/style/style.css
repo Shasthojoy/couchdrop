@@ -64,7 +64,6 @@
     text-decoration: none;
 }
 
-
 a.main-menu-item:hover {
     background: #4c4c4c;
     color: white;
@@ -89,6 +88,7 @@ a.main-menu-item:hover {
     width: 100%;
     -moz-osx-font-smoothing: auto;
     -webkit-font-smoothing: auto;
+    font-family: courier;
 }
 
 .topbar-container {
@@ -124,4 +124,83 @@ a.main-menu-item:hover {
     z-index: 102;
     margin: 0 0 0 84px;
     right: 20px;
+}
+
+.plans {
+    display: table;
+    padding-top: 50px;
+}
+
+.plan {
+    display: table-cell;
+    padding-top: 20px;
+    padding-bottom: 50px;
+    width: 400px;
+
+    padding-left:20px;
+    padding-right:20px;
+}
+
+.plan_freeby {
+    border: solid 1px #d8d8d8;
+
+}
+
+.plan_standard {
+    border-style: solid;
+    border-width: 1px;
+    border-color: #b6efff;
+    margin-bottom: 1.25rem;
+    background: #ecfaff;
+}
+
+.plan_gold {
+    border-style: solid;
+    border-width: 1px;
+
+    margin-bottom: 1.25rem;
+    background-color: #fcf8e3;
+    border-color: #faf2cc;
+}
+
+.plan_title {
+    text-align: center;
+}
+
+.plan_details {
+
+}
+.plan_price {
+    text-align: center;
+}
+
+.plan_row {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    padding-top: 23px;
+}
+
+.plan_title {
+
+}
+
+.plan_change {
+    margin-left: auto;
+    margin-right: auto;
+    align-items: center;
+    padding-top: 20px;
+    text-align: center;
+}
+
+h1, h2, h3, h4 {
+    font-family: Courier !important;
+}
+
+body {
+    font-family: "Avenir Next W01", "Avenir Next", "Neue Helvetica W01", "Helvetica Neue", Helvetica, sans-serif !important;
+}
+
+legend {
+    font-family: Courier !important;
 }

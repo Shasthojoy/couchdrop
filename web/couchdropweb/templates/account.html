@@ -10,6 +10,7 @@
         <i class="fa fa-user"></i> Account Settings
     </div>
 </div>
+
 <div class="mui-container-fluid">
     <div class="mui-row">
         <div class="mui-col-md-8">
@@ -30,6 +31,81 @@
                         <input type="password" name="password2" placeholder="Password">
                     </div>
                     <button type="submit" class="mui-btn mui-btn--raised">Save</button>
+                </form>
+            </div>
+
+            <div class="mui-panel">
+                <form method="post">
+                    <legend>Account Subscription</legend>
+                    <div>Hosted Plan Name: {{account.subscription_type}}</div>
+
+                    {% if account.subscription_type != 'freeby' %}
+                    <div>Make changes to your Subscription: <a href="{{account.subscription_url}}">Manage
+                        Subscription</a></div>
+                    {% endif %}
+
+                    <br>
+                    {% if account.subscription_type == 'freeby' %}
+                    <div>You are currently using a free account. To unlock your Couchdrop Account and support our
+                        development, upgrade your account.
+                    </div>
+
+                    <div class="plans">
+                        <div class="plan plan_freeby">
+                            <div class="plan_title"><h3>Free</h3></div>
+                            <hr>
+                            <div class="plan_details">
+
+                                <div class="plan_row">5 Uploads per month</div>
+                                <div class="plan_row">Unlimited downloads</div>
+                                <div class="plan_row">1 Storage Provider</div>
+                                <div class="plan_row">1 Account and Keyset</div>
+                            </div>
+                        </div>
+                        <div class="plan plan_standard">
+                            <div class="plan_title"><h3>Standard</h3></div>
+                            <hr>
+
+                            <div class="plan_details">
+                                <div class="plan_row">500 Uploads per month</div>
+                                <div class="plan_row">Unlimited downloads</div>
+                                <div class="plan_row">5 Storage Providers</div>
+                                <div class="plan_row">5 Accounts and Keysets</div>
+                                <div class="plan_row">Email Support</div>
+                            </div>
+
+                            <hr>
+                            <div class="plan_price">
+                                <h3>$5.00</h3> USD Per Month
+                            </div>
+                            <div class="plan_change">
+                                <a href="/account/subscription/subscribe/couchdrop_standard"
+                                   class="mui-btn mui-btn--primary">Subscribe</a>
+                            </div>
+                        </div>
+                        <div class="plan plan_gold">
+                            <div class="plan_title"><h3>Premium</h3></div>
+                            <hr>
+
+                            <div class="plan_details">
+                                <div class="plan_row">Unlimited Uploads per month</div>
+                                <div class="plan_row">Unlimited downloads</div>
+                                <div class="plan_row">Unlimited Storage Providers</div>
+                                <div class="plan_row">Unlimited Accounts and Keysets</div>
+                                <div class="plan_row">Unlimited Email Support</div>
+                            </div>
+                            <hr>
+                            <div class="plan_price">
+                                <h3>$25.00</h3>USD Per Month
+                            </div>
+                            <div class="plan_change">
+                                <a href="/account/subscription/subscribe/couchdrop_premium"
+                                   class="mui-btn mui-btn--primary">Subscribe</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <br><br>
                 </form>
             </div>
         </div>

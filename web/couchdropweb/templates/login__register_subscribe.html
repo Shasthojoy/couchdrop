@@ -1,0 +1,65 @@
+{% extends "login.html" %}
+{% block body %}
+
+<style>
+    .plan_details {
+        text-align: center;
+        color: gray;
+    }
+</style>
+<div class="mui-col-md-5 mui-col-sm-offset-6">
+    <h3>Subscription Plans</h3>
+    <div>Pick a no commitment subscription. Each plan comes with a free 30 day trial and you can upgrade or downgrade at
+        any time from the Account tab.
+    </div>
+    <div class="plans">
+        <div class="plan plan_freeby">
+            <div class="plan_title"><h3>Free</h3></div>
+            <hr>
+            <div class="plan_price">
+                <h3>$0.00</h3> USD Per Month
+            </div>
+
+            <div class="plan_change">
+                <a href="/register/subscription/subscribe/freeby?email={{email}}" class="mui-btn mui-btn--primary">Subscribe</a>
+            </div>
+
+            <hr>
+            <div class="plan_details">
+                Free account with unlimited reads and limited uploads/writes.
+            </div>
+        </div>
+        <div class="plan plan_standard">
+            <div class="plan_title"><h3>Standard</h3></div>
+            <hr>
+            <div class="plan_price">
+                <h3>$5.00</h3> USD Per Month
+            </div>
+            <div class="plan_change">
+                <a href="/register/subscription/subscribe/couchdrop_standard?email={{email}}"
+                   class="mui-btn mui-btn--primary">Subscribe</a>
+            </div>
+            <hr>
+            <div class="plan_details">
+                Standard account, unlimited reads, 500 uploads/writes per month.
+            </div>
+
+        </div>
+        <div class="plan plan_freeby">
+            <div class="plan_title"><h3>Premium</h3></div>
+            <hr>
+            <div class="plan_price">
+                <h3>$25.00</h3>USD Per Month
+            </div>
+            <div class="plan_change">
+                <a href="/register/subscription/subscribe/couchdrop_premium?email={{email}}"
+                   class="mui-btn mui-btn--primary">Subscribe</a>
+            </div>
+            <hr>
+            <div class="plan_details">
+                Premium account, no limits.
+            </div>
+        </div>
+    </div>
+</div>
+{%endblock%}

@@ -41,6 +41,42 @@ def register(username, password, email_address):
         data=dict(username=username, password=password, email_address=email_address)
     )
 
+    return ret.status_code == 200
+
+def register_confirm(confirm_code):
+    ret = requests.post(
+        config__get("COUCHDROP_WEB__API_URL") + "/register/confirm/" + confirm_code,
+    )
+
+    if ret.status_code == 200:
+        return json.loads(ret.text)
+    return None
+
+def request_reset_password(email_address):
+    ret = requests.post(
+        config__get("COUCHDROP_WEB__API_URL") + "/resetpassword/" + email_address,
+    )
+
+    if ret.status_code == 200:
+        return json.loads(ret.text)
+    return None
+
+def reset_password(code, password):
+    ret = requests.post(
+        config__get("COUCHDROP_WEB__API_URL") + "/resetpassword/reset/" + code,data=dict(password=password)
+    )
+
+    if ret.status_code == 200:
+        return json.loads(ret.text)
+    return None
+
+
+def resetpassword_confirm(code, password):
+    ret = requests.post(
+        config__get("COUCHDROP_WEB__API_URL") + "/resetpassword/reset/" + code,
+        data=dict(password=password)
+    )
+
     if ret.status_code == 200:
         return json.loads(ret.text)
     return None

@@ -60,7 +60,6 @@ def manage_credentials_update():
 
     data = json.loads(request.data)
 
-    # account = flask.g.db_session.query(Account).filter(Account.username == token_object.account).scalar()
     credential = flask.g.db_session.query(TempCredentials).filter(
         Account.username == token_object.account, TempCredentials.username == data.get("username")
     ).scalar()

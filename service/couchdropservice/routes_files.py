@@ -10,7 +10,7 @@ from dropbox.exceptions import ApiError
 
 from flask.globals import request
 
-from couchdropservice import application
+from couchdropservice import application, config__get
 from couchdropservice.middleware import easywebdav
 from couchdropservice.middleware.easywebdav import OperationFailed
 from couchdropservice.middleware.email_sender import mandrill__send_file__email
@@ -95,6 +95,31 @@ def __download_s3(account, file_path):
 
     try:
         object = client.get_object(Bucket=account.endpoint__amazon_s3_bucket, Key=path)
+    except ClientError as e:
+        return False, None
+    return True, object["Body"].read()
+
+def __upload_hosted_s3(email_address, file_object, path):
+    # Without this, s3 creates a new blank folder
+    path = "%s/%s" % (base64.encodestring(email_address), path.lstrip('/'))
+    client = boto3.client(
+        's3',
+        aws_access_key_id=config__get("COUCHDROP_SERVICE__AWS_KEY"),
+        aws_secret_access_key=config__get("COUCHDROP_SERVICE__AWS_SECRET")
+    )
+
+    client.put_object(Bucket=config__get("COUCHDROP_SERVICE__AWS_HOSTED_S3_BUCKET"), Key=path, Body=file_object)
+
+def __download_hosted_s3(email_address, file_path):
+    path = "%s/%s" % (base64.encodestring(email_address), file_path.lstrip('/'))
+    client = boto3.client(
+        's3',
+        aws_access_key_id=config__get("COUCHDROP_SERVICE__AWS_KEY"),
+        aws_secret_access_key=config__get("COUCHDROP_SERVICE__AWS_SECRET")
+    )
+
+    try:
+        object = client.get_object(Bucket=config__get("COUCHDROP_SERVICE__AWS_HOSTED_S3_BUCKET"), Key=path)
     except ClientError as e:
         return False, None
     return True, object["Body"].read()
@@ -235,6 +260,10 @@ def push_upload(token):
                     __upload_s3(store, file, new_file_path)
                     __record_audit(token, account.username, token_object.authenticated_user, new_file_path, "s3")
                     break
+                if store.store_type == "hosted":
+                    __upload_hosted_s3(account.email_address, file, new_file_path)
+                    __record_audit(token, account.username, token_object.authenticated_user, new_file_path, "s3")
+                    break
                 if store.store_type == "webdav":
                     __upload_webdav(store, file, new_file_path)
                     __record_audit(token, account.username, token_object.authenticated_user, new_file_path, "webdav")
@@ -306,5 +335,13 @@ def pull_download(token):
                     return flask.jsonify({"b64_content": encoded_file})
                 else:
                     return flask.jsonify({"error": "Webdav could not return the file: " + new_file_path}), 404
+
+            if store.store_type == "hosted":
+                success, binary_file_content = __download_hosted_s3(account.email_address, new_file_path)
+                if success:
+                    encoded_file = base64.b64encode(binary_file_content)
+                    return flask.jsonify({"b64_content": encoded_file})
+                else:
+                    return flask.jsonify({"error": "S3 could not return the file: " + new_file_path}), 404
 
     return flask.jsonify({})

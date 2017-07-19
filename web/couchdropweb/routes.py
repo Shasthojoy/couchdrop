@@ -1,6 +1,8 @@
+import json
 import os
 
 import flask
+import requests
 from flask import session, redirect, request, flash, render_template, current_app
 from flask.ext.login import logout_user, login_user, login_required, current_user
 
@@ -26,10 +28,30 @@ def load_user(userid):
     return flask.g.current_user
 
 
+def __check_capture():
+    verify_capture = requests.post(
+        "https://www.google.com/recaptcha/api/siteverify",
+        data=dict(secret=os.environ["COUCHDROP_WEB__RECAPTURE_SECRET"], response=request.form.get("g-recaptcha-response"))
+    )
+
+    if verify_capture.status_code != 200:
+        flash("Recapture failed, please try again")
+        return False
+
+    capture_data_dict = json.loads(verify_capture.text)
+    if not capture_data_dict["success"]:
+        flash("Recapture failed, please try again")
+        return False
+
+    return True
+
 @application.route("/login", methods=['GET', 'POST'])
 def login():
     if request.method == "POST":
         try:
+            if not __check_capture():
+                return redirect("/login")
+
             authentication_token = middleware.authenticate(request.form.get("email"), request.form.get("password"))
             if authentication_token is not None:
                 setattr(current_app, "current_user", User(authentication_token))
@@ -42,13 +64,99 @@ def login():
         except Exception as e:
             flash("login_invalid_username_password")
             return redirect("/login")
-    return render_template("login.html"), 403
+    return render_template("login__login.html"), 403
+
+
+@application.route("/resetpassword", methods=["GET"])
+def resetpassword():
+    return flask.render_template("login__resetpassword.html")
+
+
+@application.route("/resetpassword", methods=["POST"])
+def resetpassword_send():
+    if not __check_capture():
+        return redirect("/resetpassword")
+
+    middleware.request_reset_password(
+        request.form.get("real_email_address")
+    )
+    return flask.render_template("login__resetpassword_sent.html")
+
+
+@application.route("/resetpassword/<code>", methods=["GET"])
+def resetpassword_reset(code):
+    return flask.render_template("login__resetpassword_reset.html")
+
+
+@application.route("/resetpassword/<code>", methods=["POST"])
+def resetpassword_reset_post(code):
+    middleware.reset_password(
+        code, request.form.get("password")
+    )
+    return redirect("/login")
+
+
+@application.route("/register", methods=["GET"])
+def register_get():
+    return render_template("login__register.html")
 
 
 @application.route("/register", methods=["POST"])
-def register():
-    middleware.register(request.form.get("email"), request.form.get("password"), request.form.get("real_email_address"))
-    return redirect("/login")
+def register_save():
+    if not __check_capture():
+        return redirect("/register")
+
+    register_result = middleware.register(
+        request.form.get("email"), request.form.get("password"), request.form.get("real_email_address")
+    )
+
+    if not register_result:
+        flash("User creation failed, user already exists or another error was encountered")
+        return redirect("/register")
+
+    return redirect("/register/awaitingconfirm")
+
+
+@application.route("/register/awaitingconfirm", methods=["GET"])
+def register_awaiting_confirm():
+    return render_template("login__register_email_sent.html")
+
+
+@application.route("/register/awaitingconfirm/<confirm_code>")
+def register_awaiting_confirm_confirm_code(confirm_code):
+    account = middleware.register_confirm(confirm_code)
+    if not account:
+        return "FAILED"
+    return redirect("/register/subscription?email=" + account["email_address"])
+
+
+@application.route("/register/subscription", methods=["GET"])
+def register_subscription():
+    return render_template("login__register_subscribe.html", email=request.args.get("email"))
+
+
+@application.route("/register/subscription/subscribe/freeby")
+def register_subscription_subscribe_freeby():
+    return redirect("/register/finish")
+
+
+@application.route("/register/subscription/subscribe/couchdrop_standard")
+def register_subscription_subscribe_standard():
+    subscribe = "https://couchdrop.chargify.com/subscribe/v3qy4vdvyqnv/couchdrop_standard?email=%s" % request.args.get(
+        "email")
+    return redirect(subscribe)
+
+
+@application.route("/register/subscription/subscribe/couchdrop_premium")
+def register_subscription_subscribe_premium():
+    subscribe = "https://couchdrop.chargify.com/subscribe/g3dfxnbxbcr7/couchdrop_premium?email=%s" % request.args.get(
+        "email")
+    return redirect(subscribe)
+
+
+@application.route("/register/finish", methods=["GET"])
+def register_finish():
+    return render_template("login__register_finish.html")
 
 
 @application.route("/status")
@@ -90,6 +198,7 @@ def credentials_ajax():
 def credentials_ajax_save():
     middleware.api__get_credentials_save(flask.g.current_user.get_id(), request.json)
     return "OK"
+
 
 @application.route("/ajax/credentials/rsakey", methods=["POST"])
 @login_required
@@ -187,20 +296,19 @@ def get_dropbox_auth_flow(web_app_session):
 @application.route("/buckets/<id>/dropbox/activate")
 @login_required
 def dropbox_auth_start(id):
-
-    authorize_url = get_dropbox_auth_flow(session).start(url_state=id)
+    session["DROP_BOX_ACTIVATE_ID"] = id
+    authorize_url = get_dropbox_auth_flow(session).start()
     return redirect(authorize_url)
 
 
 @application.route("/buckets/dropbox/activate/callback")
 @login_required
 def dropbox_auth_finish():
-    account = middleware.api__get_account(flask.g.current_user.get_id())
     access_token, user_id, url_state = get_dropbox_auth_flow(session).finish(request.args)
 
     buckets = middleware.api__get_storage(flask.g.current_user.get_id())
     for bucket in buckets:
-        if bucket.get("id") == url_state:
+        if bucket.get("id") == session["DROP_BOX_ACTIVATE_ID"]:
             bucket["endpoint__dropbox_access_token"] = access_token
             bucket["endpoint__dropbox_user_id"] = user_id
             bucket["store_type"] = "dropbox"
@@ -209,7 +317,57 @@ def dropbox_auth_finish():
     return redirect("/buckets")
 
 
+@application.route("/account/subscription/subscribe/couchdrop_standard")
+@login_required
+def account_subscription_subscribe_standard():
+    account = middleware.api__get_account(flask.g.current_user.get_id())
+    if account.get("subscription_url"):
+        return redirect(account["subscription_url"])
+
+    subscribe = "https://couchdrop.chargify.com/subscribe/v3qy4vdvyqnv/couchdrop_standard?email=%s" % account[
+        "email_address"]
+    return redirect(subscribe)
+
+
+@application.route("/account/subscription/subscribe/couchdrop_premium")
+@login_required
+def account_subscription_subscribe_premium():
+    account = middleware.api__get_account(flask.g.current_user.get_id())
+    if account.get("subscription_url"):
+        return redirect(account["subscription_url"])
+
+    subscribe = "https://couchdrop.chargify.com/subscribe/g3dfxnbxbcr7/couchdrop_premium?email=%s" % account[
+        "email_address"]
+    return redirect(subscribe)
+
+
+@application.route("/account/subscription/subscribe/couchdrop_premium/save")
+def account_subscription_subscribe_save_premium():
+    if current_user.is_authenticated():
+        account = middleware.api__get_account(flask.g.current_user.get_id())
+        middleware.api__set_account(flask.g.current_user.get_id(), account)
+        return redirect("/account")
+    if not current_user.is_authenticated():
+        return redirect("/register/finish")
+
+
+@application.route("/account/subscription/subscribe/couchdrop_standard/save")
+def account_subscription_subscribe_save_standard():
+    if current_user.is_authenticated():
+        account = middleware.api__get_account(flask.g.current_user.get_id())
+        middleware.api__set_account(flask.g.current_user.get_id(), account)
+        return redirect("/account")
+    if not current_user.is_authenticated():
+        return redirect("/register/finish")
+
+
 @application.before_request
 def before_request():
     if current_user.is_authenticated() and request.endpoint != 'login':
         flask.g.username = session.get("username")
+
+
+@application.errorhandler(500)
+def error():
+    import traceback
+    traceback.print_exc()

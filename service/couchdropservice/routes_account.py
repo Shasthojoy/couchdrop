@@ -7,6 +7,7 @@ from flask.globals import request
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from couchdropservice import application, config__get
+from couchdropservice.middleware.email_sender import mandrill__email_confirm__email, mandrill__email_password_reset
 from couchdropservice.model import Account, PushToken, TempCredentials, Storage
 
 
@@ -25,6 +26,9 @@ def push_authenticate():
     if account:
         if not __internal_check_password_matches(account, password):
             return flask.jsonify(err="Account was invalid"), 403
+
+        if not account.email_confirmation_code_accepted:
+            return flask.jsonify(err="Account email address has not been registered"), 403
 
         new_token = PushToken()
         new_token.account = account.username
@@ -60,6 +64,9 @@ def push_authenticate_get_token():
 
     account = flask.g.db_session.query(Account).filter(Account.username == username).scalar()
     if account:
+        if not account.email_confirmation_code_accepted:
+            return flask.jsonify(err="Account email address has not been registered"), 403
+
         new_token = PushToken()
         new_token.account = account.username
         new_token.authenticated_user = username
@@ -92,16 +99,75 @@ def register():
     email_address = request.form.get("email_address")
     password = request.form.get("password")
 
+    #Sanitise username
+
+
     account = flask.g.db_session.query(Account).filter(Account.email_address == email_address).scalar()
+    if account:
+        return flask.jsonify(err="Email already exists"), 403
+
+    account = flask.g.db_session.query(Account).filter(Account.username == username).scalar()
     if account:
         return flask.jsonify(err="Username already exists"), 403
 
     new_account = Account()
     new_account.username = username
     new_account.email_address = email_address
+    new_account.subscription_type = "freeby"
     new_account.password = generate_password_hash(password)
+    new_account.email_confirmation_code = str(uuid.uuid4())
+    new_account.email_confirmation_code_accepted = False
     flask.g.db_session.add(new_account)
+
+    mandrill__email_confirm__email(
+        new_account.email_address, new_account.email_address, new_account.email_confirmation_code
+    )
     return flask.jsonify({}), 200
+
+
+@application.route("/resetpassword/<email_address>", methods=["POST"])
+def resetpassword(email_address):
+    account = flask.g.db_session.query(Account).filter(Account.email_address == email_address).scalar()
+    if not account:
+        return flask.jsonify(err="Email already exists"), 403
+
+    account.reset_password_code = str(uuid.uuid4())
+    mandrill__email_password_reset(
+        account.email_address, account.email_address, account.reset_password_code
+    )
+    return flask.jsonify({}), 200
+
+
+@application.route("/resetpassword/reset/<code>", methods=["POST"])
+def resetpassword_confirm(code):
+    if not code:
+        return flask.jsonify(err="Code is empty"), 403
+
+    account = flask.g.db_session.query(Account).filter(Account.reset_password_code == code).scalar()
+    if not account:
+        return flask.jsonify(err="Code is not valid"), 403
+
+    password = request.form.get("password")
+    if not password:
+        flask.jsonify(err="Password was invalid"), 403
+
+    account.password = password
+    account.reset_password_code = ""
+    return flask.jsonify({}), 200
+
+
+@application.route("/register/confirm/<code>", methods=["POST"])
+def register_confirm(code):
+    if not code:
+        return flask.jsonify(err="Code is empty"), 403
+
+    account = flask.g.db_session.query(Account).filter(Account.email_confirmation_code == code).scalar()
+    if not account:
+        return flask.jsonify(err="Code does not exist"), 403
+
+    account.email_confirmation_code_accepted = True
+    account.email_confirmation_code = ""
+    return flask.jsonify({"email_address": account.email_address}), 200
 
 
 @application.route("/manage/account", methods=["GET"])
@@ -115,18 +181,15 @@ def manage_authenticate():
     ret = {
         "username": account.username,
         "email_address": account.email_address,
-        "endpoint__amazon_s3_enabled": account.endpoint__amazon_s3_enabled,
-        "endpoint__amazon_s3_access_key_id": account.endpoint__amazon_s3_access_key_id,
-        "endpoint__amazon_s3_access_secret_key": account.endpoint__amazon_s3_access_secret_key,
-        "endpoint__amazon_s3_bucket": account.endpoint__amazon_s3_bucket,
-
-        "endpoint__dropbox_enabled": account.endpoint__dropbox_enabled,
-        "endpoint__dropbox_access_token": account.endpoint__dropbox_access_token,
-        "endpoint__dropbox_user_id": account.endpoint__dropbox_user_id,
-
+        "subscription_type": account.subscription_type,
         "endpoint__valid_public_key": account.endpoint__valid_public_key
     }
 
+    from couchdropservice.middleware.chargify_provider import chargify__get_subscription_info
+    subscription, subscription_link = chargify__get_subscription_info(account.email_address)
+    if subscription:
+        ret["subscription_type"] = subscription
+        ret["subscription_url"] = subscription_link
     return flask.jsonify(account=ret)
 
 
@@ -144,21 +207,6 @@ def manage_authenticate_post():
         account.password = generate_password_hash(data.get("password"))
     if data.get("email_address"):
         account.email_address = data.get("email_address")
-
-    if data.get("endpoint__amazon_s3_access_key_id"):
-        account.endpoint__amazon_s3_access_key_id = data.get("endpoint__amazon_s3_access_key_id")
-    if data.get("endpoint__amazon_s3_access_secret_key"):
-        account.endpoint__amazon_s3_access_secret_key = data.get("endpoint__amazon_s3_access_secret_key")
-    if data.get("endpoint__amazon_s3_bucket"):
-        account.endpoint__amazon_s3_bucket = data.get("endpoint__amazon_s3_bucket")
-    if "endpoint__amazon_s3_enabled" in data:
-        account.endpoint__amazon_s3_enabled = data.get("endpoint__amazon_s3_enabled")
-    if "endpoint__dropbox_enabled" in data:
-        account.endpoint__dropbox_enabled = data.get("endpoint__dropbox_enabled")
-    if data.get("endpoint__dropbox_access_token"):
-        account.endpoint__dropbox_access_token = data.get("endpoint__dropbox_access_token")
-    if data.get("endpoint__dropbox_user_id"):
-        account.endpoint__dropbox_user_id = data.get("endpoint__dropbox_user_id")
     if data.get("endpoint__valid_public_key"):
         account.endpoint__valid_public_key = data.get("endpoint__valid_public_key")
     return flask.jsonify({})

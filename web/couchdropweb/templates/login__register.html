@@ -1,0 +1,30 @@
+{% extends "login.html" %}
+{% block body %}
+
+<div class="mui-col-md-4 mui-col-sm-offset-6">
+    <div>
+    </div>
+    <h3>Get Started with Couchdrop Now</h3>
+    <div>Sign up for Couchdrop, the cloud SCP server and get moving files in minutes. If you already have an account, click <a href="/login">here</a></div>
+    <br>
+    <form action="/register" method="POST">
+        <div class="mui-textfield">
+            <input type="text" name="email" placeholder="Username" required>
+        </div>
+        <div class="mui-textfield">
+            <input type="email" name="real_email_address" placeholder="Email Address" required>
+        </div>
+        <div class="mui-textfield">
+            <input type="password" name="password" placeholder="Password" required>
+        </div>
+        <div class="mui-textfield">
+            <input type="password" name="password" placeholder="Re Password" required>
+        </div>
+        <div>Signing up signifies that you have read and agree to the <a href="https://couchdrop.io/privacy">Terms of Service and our Privacy Policy</a>.</div>
+        <br>
+        <div class="g-recaptcha" data-sitekey="6LebbikUAAAAAC0o-oyYtxT8plw3k0EQINZdsuG5"></div>
+        <br>
+        <button type="submit" class="mui-btn mui-btn--raised">Signup Now</button>
+    </form>
+</div>
+{%endblock%}

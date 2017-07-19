@@ -10,6 +10,12 @@ class Account(Base):
     username = Column(String, primary_key=True)
     email_address = Column(String)
     password = Column(String)
+    subscription_type = Column(String)
+
+    email_confirmation_code = Column(String)
+    email_confirmation_code_accepted = Column(Boolean)
+
+    reset_password_code = Column(String)
 
     endpoint__amazon_s3_enabled = Column(Boolean)
     endpoint__amazon_s3_access_key_id = Column(String)

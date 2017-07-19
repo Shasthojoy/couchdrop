@@ -88,3 +88,8 @@ alter table temp_credentials add column public_key varchar(1000) default '';
 alter table temp_credentials add column permissions_mode varchar(10) default '';
 alter table temp_credentials add column permissions_path varchar(100) default '';
 
+alter table accounts add column subscription_type varchar(100) default 'freeby';
+
+alter table accounts add column email_confirmation_code varchar(100) default '';
+alter table accounts add column email_confirmation_code_accepted bool default false;
+alter table accounts add column reset_password_code varchar(100) default '';

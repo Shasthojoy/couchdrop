@@ -20,75 +20,84 @@
           integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script src='https://www.google.com/recaptcha/api.js'></script>
 
 </head>
+
+<!-- Start of couchdrophelp Zendesk Widget script -->
+<script>/*<![CDATA[*/
+window.zEmbed || function (e, t) {
+    var n, o, d, i, s, a = [], r = document.createElement("iframe");
+    window.zEmbed = function () {
+        a.push(arguments)
+    }, window.zE = window.zE || window.zEmbed, r.src = "javascript:false", r.title = "", r.role = "presentation", (r.frameElement || r).style.cssText = "display: none", d = document.getElementsByTagName("script"), d = d[d.length - 1], d.parentNode.insertBefore(r, d), i = r.contentWindow, s = i.document;
+    try {
+        o = s
+    } catch (e) {
+        n = document.domain, r.src = 'javascript:var d=document.open();d.domain="' + n + '";void(0);', o = s
+    }
+    o.open()._l = function () {
+        var e = this.createElement("script");
+        n && (this.domain = n), e.id = "js-iframe-async", e.src = "https://assets.zendesk.com/embeddable_framework/main.js", this.t = +new Date, this.zendeskHost = "couchdrophelp.zendesk.com", this.zEQueue = a, this.body.appendChild(e)
+    }, o.write('<body onload="document._l();">'), o.close()
+}();
+/*]]>*/</script>
+<!-- End of couchdrophelp Zendesk Widget script -->
+
 <body>
 <style>
-    body {
-        background: whitesmoke;
+    .left {
+        height: 100%;
+        background-color: #eee;
+        position: fixed;
+        width: 40%;
+        padding-top: 100px;
+    }
+
+    .right {
+        height: 100%;
+        padding-top: 100px;
     }
 
     .container {
-        margin-top:100px;
+        margin-top: 100px;
     }
 
     #register_form {
-        display:none;
+        display: none;
+    }
+
+    .welcome {
+        text-align: center;
+        font-size: 20px;
+        padding-top: 20px;
+        padding-bottom: 10px;
+    }
+
+    .login_message {
+        text-align: center;
+        padding-bottom: 30px;
+    }
+
+    .login_logo {
+        vertical-align: middle;
+        max-height: 300px;
+        display: block;
+        margin: auto;
+        margin-top: 30px;
     }
 </style>
 
-<script>
-    window.open_register = function(){
-        $("#login_form").hide();
-        $("#register_form").show();
-    };
-
-    window.open_login = function(){
-        $("#login_form").show();
-        $("#register_form").hide();
-    };
-</script>
-<div class="container">
-    <div class="mui-panel mui-col-md-4 mui-col-sm-offset-4">
-        <legend>
-            <img style="max-height: 40px;" src="{{ url_for('static', filename='images/couchdroplogo.png') }}"/>
-            couchdrop.io
-        </legend>
-
-        <form id="login_form" action="/login" method="POST">
-
-            <div class="mui-textfield">
-                <input type="text" name="email" placeholder="Username">
-            </div>
-            <div class="mui-textfield">
-                <input type="password" name="password" placeholder="Password">
-            </div>
-            <button type="submit" class="mui-btn mui-btn--raised">Login</button>
-
-            <hr>
-            <div>Don't have an account with CouchDrop yet? Signup <a onclick="window.open_register();" href="#">here</a></div>
-        </form>
-
-        <form id="register_form" action="/register" method="POST">
-            <br>
-            <div>Don't have an account with CouchDrop yet? You can quickly register by creating an account below. </div>
-
-            <br>
-            <div class="mui-textfield">
-                <input type="text" name="email" placeholder="Username">
-            </div>
-            <div class="mui-textfield">
-                <input type="email" name="real_email_address" placeholder="Email Address">
-            </div>
-            <div class="mui-textfield">
-                <input type="password" name="password" placeholder="Password">
-            </div>
-            <div class="mui-textfield">
-                <input type="password" name="password" placeholder="Re Password">
-            </div>
-            <button type="submit" class="mui-btn mui-btn--raised">Signup Now</button>
-        </form>
+<div class="left">
+    <div>
+        <img class="login_logo" src="{{ url_for('static', filename='images/couchdroplogo.png') }}"/>
+        <div style="text-align: center"><h1>#>couchdrop</h1></div>
     </div>
+</div>
+
+<div class="right">
+    {% block body %}
+    {% endblock %}
 </div>
 </body>
 </html>
