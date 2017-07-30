@@ -59,8 +59,8 @@ def __check_capture():
 def login():
     if request.method == "POST":
         try:
-            # if not __check_capture():
-            #     return redirect("/login")
+            if not __check_capture():
+                return redirect("/login")
 
             authentication_token = middleware.authenticate(request.form.get("email"), request.form.get("password"))
             if authentication_token is not None:
