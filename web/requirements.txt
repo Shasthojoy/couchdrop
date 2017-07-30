@@ -6,3 +6,4 @@ requests
 uwsgi
 dropbox==6.5.0
 webdavclient
+google-api-python-client

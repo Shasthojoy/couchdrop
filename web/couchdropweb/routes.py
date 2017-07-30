@@ -318,7 +318,7 @@ def googledrive_auth_start(id):
         client_id=os.environ["COUCHDROP_WEB__GOOGLE_DEV_CLIENT_ID"],
         client_secret=os.environ["COUCHDROP_WEB__GOOGLE_DEV_CLIENT_SECRET"],
         scope='https://www.googleapis.com/auth/drive',
-        redirect_uri="http://localhost:5089/buckets/googledrive/activate/callback",
+        redirect_uri=os.environ["COUCHDROP_WEB__GOOGLE_DEV_REDIRECT_URL"],
         access_type="offline",
     )
 
