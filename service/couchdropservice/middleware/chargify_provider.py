@@ -1,4 +1,6 @@
 import json
+import os
+
 import requests
 
 from couchdropservice import config__get
@@ -36,3 +38,5 @@ def chargify__get_subscription_info(email_address):
             link = __chargify__get_link(customer["customer"]["id"])
             return subscription, link
     return None, None
+
+

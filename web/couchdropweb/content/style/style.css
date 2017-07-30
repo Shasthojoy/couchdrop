@@ -137,8 +137,8 @@ a.main-menu-item:hover {
     padding-bottom: 50px;
     width: 400px;
 
-    padding-left:20px;
-    padding-right:20px;
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 .plan_freeby {
@@ -170,6 +170,7 @@ a.main-menu-item:hover {
 .plan_details {
 
 }
+
 .plan_price {
     text-align: center;
 }
@@ -203,4 +204,52 @@ body {
 
 legend {
     font-family: Courier !important;
+}
+
+.infobox {
+    border: 1px solid #e7e7e7;
+    background-color: #F7F7F7;
+    border-radius: 3px;
+    margin-left: 10px;
+    margin-right: 10px;
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+
+.infobox > .metric {
+    font-size: 33px;
+    text-align: center;
+}
+
+.infobox > .desc {
+    font-size: 15px;
+    text-align: center;
+}
+
+.download {
+    background-color: whitesmoke;
+    border-radius: 3px;
+    padding-left: 5px;
+    padding-right: 5px;
+    display: inline;
+}
+
+.upload {
+    background-color: whitesmoke;
+    border-radius: 3px;
+    padding-left: 5px;
+    padding-right: 5px;
+    display: inline;
+}
+
+.failed {
+    color: orangered !important;
+}
+
+.storage_engine {
+    background-color: whitesmoke;
+    border-radius: 3px;
+    padding-left: 5px;
+    padding-right: 5px;
+    display: inline;
 }

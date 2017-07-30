@@ -9,7 +9,6 @@
     .mui-checkbox > label > input[type=checkbox] {
         position: relative !important;
     }
-
 </style>
 
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
@@ -60,6 +59,7 @@
                             <div class="mui-select">
                                 <select ng-model="bucket.store_type">
                                     <option value="dropbox">Dropbox</option>
+                                    <option value="googledrive">Google Drive</option>
                                     <option value="s3">Amazon S3</option>
                                     <option value="webdav">WebDav</option>
                                     <option value="hosted">Hosted Storage</option>
@@ -74,9 +74,38 @@
                                 </div>
                                 {% raw %}
                                 <a type="submit" class="mui-btn mui-btn--raised"
-                                        ng-href="/buckets/{{bucket.id}}/dropbox/activate">Link Dropbox
+                                   ng-href="/buckets/{{bucket.id}}/dropbox/activate">Link Dropbox
                                 </a>
                                 {% endraw %}
+                            </div>
+
+                            <div ng-show="bucket.store_type == 'googledrive'">
+                                <div ng-show="bucket.endpoint__googledrive_credentials_active == false">
+                                    {% raw %}
+
+                                    <div class="mui-select">
+                                        <select disabled>
+                                            <option>Disconnected</option>
+                                        </select>
+                                        <label>Status</label>
+                                    </div>
+
+                                    <a type="submit" class="mui-btn mui-btn--raised" ng-click="main.link_google(bucket.id)">Link GoogleDrive</a>
+                                    {% endraw %}
+                                </div>
+                                <div ng-show="bucket.endpoint__googledrive_credentials_active == true">
+                                    <div class="mui-select">
+                                        <select disabled>
+                                            <option>Connected</option>
+                                        </select>
+                                        <label>Status</label>
+                                    </div>
+
+                                    {% raw %}
+                                    <a type="submit" class="mui-btn mui-btn--raised" ng-click="main.link_google(bucket.id)">Relink GoogleDrive</a>
+                                    {% endraw %}
+                                </div>
+
                             </div>
 
                             <div ng-show="bucket.store_type == 's3'">
@@ -169,10 +198,12 @@
             });
         };
 
-//        self.link_dropbox = function (id) {
-//            /* Save the guy.... */
-//            window.location = "/buckets/" + id + "/dropbox/activate";
-//        };
+        self.link_google = function (id) {
+            /* Save the guy.... */
+            $http.post("/ajax/buckets", self.buckets).then(function (response) {
+                window.location = "/buckets/"+id+"/googledrive/activate";
+            });
+        };
     }]);
 </script>
 {% endblock %}

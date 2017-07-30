@@ -42,4 +42,3 @@ with application.test_request_context():
     from couchdropservice import routes_account
     from couchdropservice import routes_credentials
     from couchdropservice import routes_files
-

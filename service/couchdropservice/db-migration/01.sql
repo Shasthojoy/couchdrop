@@ -93,3 +93,12 @@ alter table accounts add column subscription_type varchar(100) default 'freeby';
 alter table accounts add column email_confirmation_code varchar(100) default '';
 alter table accounts add column email_confirmation_code_accepted bool default false;
 alter table accounts add column reset_password_code varchar(100) default '';
+
+alter table storage add column endpoint__googledrive_credentials varchar(5000) default '';
+
+alter table audit add column storage_engine_id varchar(500) default '';
+alter table audit add column event_type varchar(500) default 'upload';
+alter table audit add column ip_address varchar(500) default '';
+alter table audit add column success bool default true;
+alter table audit add column additional_info varchar(5000) default '';
+

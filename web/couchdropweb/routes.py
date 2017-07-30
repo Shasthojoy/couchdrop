@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 
@@ -5,6 +6,7 @@ import flask
 import requests
 from flask import session, redirect, request, flash, render_template, current_app
 from flask.ext.login import logout_user, login_user, login_required, current_user
+from oauth2client.client import OAuth2WebServerFlow
 
 from couchdropweb import application, login_manager
 
@@ -12,6 +14,12 @@ from couchdropweb import middleware
 from couchdropweb.middleware import User
 
 from dropbox import DropboxOAuth2Flow
+
+from oauth2client import client
+from oauth2client import tools
+from oauth2client.file import Storage
+
+from couchdropweb.middleware.google_credentials_storage import GoogleCredentailStorage
 
 
 @application.route("/logout")
@@ -31,7 +39,8 @@ def load_user(userid):
 def __check_capture():
     verify_capture = requests.post(
         "https://www.google.com/recaptcha/api/siteverify",
-        data=dict(secret=os.environ["COUCHDROP_WEB__RECAPTURE_SECRET"], response=request.form.get("g-recaptcha-response"))
+        data=dict(secret=os.environ["COUCHDROP_WEB__RECAPTURE_SECRET"],
+                  response=request.form.get("g-recaptcha-response"))
     )
 
     if verify_capture.status_code != 200:
@@ -45,12 +54,13 @@ def __check_capture():
 
     return True
 
+
 @application.route("/login", methods=['GET', 'POST'])
 def login():
     if request.method == "POST":
         try:
-            if not __check_capture():
-                return redirect("/login")
+            # if not __check_capture():
+            #     return redirect("/login")
 
             authentication_token = middleware.authenticate(request.form.get("email"), request.form.get("password"))
             if authentication_token is not None:
@@ -291,6 +301,46 @@ def get_dropbox_auth_flow(web_app_session):
         os.environ["COUCHDROP_WEB__REDIRECT_URI"], web_app_session,
         "dropbox-auth-csrf-token"
     )
+
+
+def __get_bucket(id):
+    buckets = middleware.api__get_storage(flask.g.current_user.get_id())
+    for bucket in buckets:
+        if bucket.get("id") == id:
+            return bucket
+    return None
+
+
+@application.route("/buckets/<id>/googledrive/activate")
+@login_required
+def googledrive_auth_start(id):
+    flow = OAuth2WebServerFlow(
+        client_id=os.environ["COUCHDROP_WEB__GOOGLE_DEV_CLIENT_ID"],
+        client_secret=os.environ["COUCHDROP_WEB__GOOGLE_DEV_CLIENT_SECRET"],
+        scope='https://www.googleapis.com/auth/drive',
+        redirect_uri="http://localhost:5089/buckets/googledrive/activate/callback",
+        access_type="offline",
+    )
+
+    auth_uri = flow.step1_get_authorize_url(state=id)
+    return redirect(auth_uri)
+
+
+@application.route("/buckets/googledrive/activate/callback")
+@login_required
+def googledrive_auth_finish():
+    bucket = __get_bucket(flask.request.args.get("state"))
+    flow = OAuth2WebServerFlow(
+        client_id=os.environ["COUCHDROP_WEB__GOOGLE_DEV_CLIENT_ID"],
+        client_secret=os.environ["COUCHDROP_WEB__GOOGLE_DEV_CLIENT_SECRET"],
+        scope='https://www.googleapis.com/auth/drive',
+        redirect_uri=os.environ["COUCHDROP_WEB__GOOGLE_DEV_REDIRECT_URL"], access_type="offline",
+    )
+
+    credentials = flow.step2_exchange(flask.request.args.get("code"))
+    bucket["endpoint__googledrive_credentials"] = credentials.to_json()
+    middleware.api__post_storage(flask.g.current_user.get_id(), bucket)
+    return redirect("/buckets")
 
 
 @application.route("/buckets/<id>/dropbox/activate")

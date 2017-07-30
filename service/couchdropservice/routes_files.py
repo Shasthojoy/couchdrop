@@ -1,19 +1,29 @@
 import base64
+import io
 import uuid
 
 import boto3
 import datetime
 import flask
+import httplib2
 from botocore.exceptions import ClientError
 from dropbox import dropbox
 from dropbox.exceptions import ApiError
 
 from flask.globals import request
+from googleapiclient import discovery
+from googleapiclient.http import MediaFileUpload, MediaIoBaseUpload, MediaIoBaseDownload
+from io import BytesIO
+from oauth2client.client import Credentials
 
 from couchdropservice import application, config__get
-from couchdropservice.middleware import easywebdav
+from couchdropservice.middleware.dropbox_api import DropboxStore
 from couchdropservice.middleware.easywebdav import OperationFailed
 from couchdropservice.middleware.email_sender import mandrill__send_file__email
+from couchdropservice.middleware.googledrive_api import GoogleDriveStore
+from couchdropservice.middleware.hosted_storage import HostedStore
+from couchdropservice.middleware.s3_storage import S3Store
+from couchdropservice.middleware.webdav_api import WebdavStore
 from couchdropservice.model import Account, PushToken, File, Storage, TempCredentials
 
 
@@ -35,7 +45,13 @@ def manage_audit():
             "filename": file.filename,
             "token": file.token,
             "storage_engine": file.storage_engine,
-            "uploader": file.authenticated_user
+            "uploader": file.authenticated_user,
+
+            "storage_engine_id": file.storage_engine_id,
+            "event_type": file.event_type,
+            "ip_address": file.ip_address,
+            "success": file.success,
+            "additional_info": file.additional_info
         })
     return flask.jsonify(files=ret)
 
@@ -59,103 +75,6 @@ def __generate_s3_url(account, file):
         ExpiresIn=100
     )
     return url
-
-
-def __upload_dropbox(store, file_object, full_path):
-    dbx = dropbox.Dropbox(store.endpoint__dropbox_access_token)
-    dbx.files_upload(file_object, full_path)
-
-
-def __download_dropbox(store, full_path):
-    try:
-        dbx = dropbox.Dropbox(store.endpoint__dropbox_access_token)
-        md, res = dbx.files_download(full_path)
-        return True, res.content
-    except ApiError as e:
-        return False, None
-
-def __upload_s3(store, file_object, path):
-    # Without this, s3 creates a new blank folder
-    path = path.lstrip('/')
-    client = boto3.client(
-        's3',
-        aws_access_key_id=store.endpoint__amazon_s3_access_key_id,
-        aws_secret_access_key=store.endpoint__amazon_s3_access_secret_key
-    )
-
-    client.put_object(Bucket=store.endpoint__amazon_s3_bucket, Key=path, Body=file_object)
-
-def __download_s3(account, file_path):
-    path = file_path.lstrip('/')
-    client = boto3.client(
-        's3',
-        aws_access_key_id=account.endpoint__amazon_s3_access_key_id,
-        aws_secret_access_key=account.endpoint__amazon_s3_access_secret_key
-    )
-
-    try:
-        object = client.get_object(Bucket=account.endpoint__amazon_s3_bucket, Key=path)
-    except ClientError as e:
-        return False, None
-    return True, object["Body"].read()
-
-def __upload_hosted_s3(email_address, file_object, path):
-    # Without this, s3 creates a new blank folder
-    path = "%s/%s" % (base64.encodestring(email_address), path.lstrip('/'))
-    client = boto3.client(
-        's3',
-        aws_access_key_id=config__get("COUCHDROP_SERVICE__AWS_KEY"),
-        aws_secret_access_key=config__get("COUCHDROP_SERVICE__AWS_SECRET")
-    )
-
-    client.put_object(Bucket=config__get("COUCHDROP_SERVICE__AWS_HOSTED_S3_BUCKET"), Key=path, Body=file_object)
-
-def __download_hosted_s3(email_address, file_path):
-    path = "%s/%s" % (base64.encodestring(email_address), file_path.lstrip('/'))
-    client = boto3.client(
-        's3',
-        aws_access_key_id=config__get("COUCHDROP_SERVICE__AWS_KEY"),
-        aws_secret_access_key=config__get("COUCHDROP_SERVICE__AWS_SECRET")
-    )
-
-    try:
-        object = client.get_object(Bucket=config__get("COUCHDROP_SERVICE__AWS_HOSTED_S3_BUCKET"), Key=path)
-    except ClientError as e:
-        return False, None
-    return True, object["Body"].read()
-
-
-def __upload_webdav(store, file_object, path):
-    webdav = easywebdav.connect(
-        store.endpoint__webdav_hostname,
-        username=store.endpoint__webdav_username,
-        password=store.endpoint__webdav_password,
-        path=store.endpoint__webdav_path,
-        protocol=store.endpoint__webdav_protocol
-    )
-
-    directories = path.split("/")
-    if len(directories) > 1:
-        webdav.mkdirs("/".join(path.split("/")[0:-1]))
-    webdav.upload(file_object, path)
-
-
-def __download_webdav(store, file_path):
-    path = file_path.lstrip('/')
-
-    webdav = easywebdav.connect(
-        store.endpoint__webdav_hostname,
-        username=store.endpoint__webdav_username,
-        password=store.endpoint__webdav_password,
-        path=store.endpoint__webdav_path,
-        protocol=store.endpoint__webdav_protocol
-    )
-
-    try:
-        file_string = webdav.download(path)
-        return True, file_string
-    except OperationFailed as e:
-        return False, None
 
 
 @application.route("/manage/files/<file_id>/download", methods=["GET"])
@@ -190,7 +109,8 @@ def __perform_email(account, file, path):
     )
 
 
-def __record_audit(token, username, authenticaterd_user, path, storage_engine):
+def __record_audit(token, username, authenticated_user, path, storage_engine, storage_engine_id, event_type, ip_address,
+                   success, additional_info=""):
     audit_event = File()
     audit_event.id = str(uuid.uuid4())
     audit_event.token = token
@@ -198,8 +118,27 @@ def __record_audit(token, username, authenticaterd_user, path, storage_engine):
     audit_event.filename = path
     audit_event.storage_engine = storage_engine
     audit_event.time = datetime.datetime.now()
-    audit_event.authenticated_user = authenticaterd_user
+    audit_event.authenticated_user = authenticated_user
+    audit_event.storage_engine_id = storage_engine_id
+    audit_event.event_type = event_type
+    audit_event.ip_address = ip_address
+    audit_event.success = success
+    audit_event.additional_info = additional_info
     flask.g.db_session.add(audit_event)
+
+
+def __get_storage_provider(email_address, store, type):
+    if type == "googledrive":
+        return GoogleDriveStore(store, email_address)
+    if type == "dropbox":
+        return DropboxStore(store, email_address)
+    if type == "webdav":
+        return WebdavStore(store, email_address)
+    if type == "s3":
+        return S3Store(store, email_address)
+    if type == "hosted":
+        return HostedStore(store, email_address)
+    return None
 
 
 @application.route("/push/upload/<token>", methods=["POST"])
@@ -227,7 +166,15 @@ def push_upload(token):
 
     if "/email:to" in file_path:
         __perform_email(account, file, file_path)
-        __record_audit(token, account.username, token_object.authenticated_user, file_path, "email")
+        __record_audit(
+            token, account.username,
+            token_object.authenticated_user, file_path,
+            "email",
+            None,
+            "upload",
+            "",
+            True
+        )
     else:
         storage_entries = flask.g.db_session.query(Storage).filter(
             Storage.account == token_object.account
@@ -244,7 +191,19 @@ def push_upload(token):
                     return flask.jsonify({"error": "Write permission is not allowed on this bucket"}), 403
 
                 if creds:
-                    if (creds.permissions_mode !="w" and creds.permissions_mode !="rw") or creds.permissions_path not in store.path:
+                    if (creds.permissions_mode != "w" and creds.permissions_mode != "rw") or creds.permissions_path not in store.path:
+                        __record_audit(token,
+                                       account.username,
+                                       token_object.authenticated_user,
+                                       file_path,
+                                       store.store_type,
+                                       None,
+                                       "upload",
+                                       "",
+                                       False,
+                                       "Credentials do not match requirements"
+                                       )
+
                         return flask.jsonify({"error": "Credentials do not match requirements"}), 403
 
                 if store.path != "/":
@@ -252,22 +211,33 @@ def push_upload(token):
                 else:
                     new_file_path = file_path
 
-                if store.store_type == "dropbox":
-                    __upload_dropbox(store, file, new_file_path)
-                    __record_audit(token, account.username, token_object.authenticated_user, new_file_path, "dropbox")
-                    break
-                if store.store_type == "s3":
-                    __upload_s3(store, file, new_file_path)
-                    __record_audit(token, account.username, token_object.authenticated_user, new_file_path, "s3")
-                    break
-                if store.store_type == "hosted":
-                    __upload_hosted_s3(account.email_address, file, new_file_path)
-                    __record_audit(token, account.username, token_object.authenticated_user, new_file_path, "s3")
-                    break
-                if store.store_type == "webdav":
-                    __upload_webdav(store, file, new_file_path)
-                    __record_audit(token, account.username, token_object.authenticated_user, new_file_path, "webdav")
-                    break
+                try:
+                    storage_provider = __get_storage_provider(account.email_address, store, store.store_type)
+                    storage_provider.upload(new_file_path, file)
+
+                    __record_audit(
+                        token, account.username,
+                        token_object.authenticated_user,
+                        file_path,
+                        store.store_type,
+                        store.id,
+                        "upload",
+                        "",
+                        True
+                    )
+
+                except Exception as e:
+                    error_message = "Unknown error from storage engine, %s" % str(e)
+                    __record_audit(
+                        token, account.username,
+                        token_object.authenticated_user, file_path,
+                        "email", None,
+                        "upload", "", False,
+                        error_message
+                    )
+
+                    return flask.jsonify({"error": error_message}), 403
+                break
     return flask.jsonify({})
 
 
@@ -306,42 +276,66 @@ def pull_download(token):
                 new_file_path = file_path
 
             if store.permissions != "r" and store.permissions != "rw":
+                __record_audit(
+                    token, account.username,
+                    token_object.authenticated_user,
+                    file_path,
+                    store.store_type,
+                    store.id,
+                    "download",
+                    "",
+                    False,
+                    "Read permission is not allowed on this bucket"
+                )
+
                 return flask.jsonify({"error": "Read permission is not allowed on this bucket"}), 403
 
             if creds:
-                if (creds.permissions_mode !="r" and creds.permissions_mode !="rw") or creds.permissions_path not in store.path:
+                if (creds.permissions_mode != "r"
+                    and creds.permissions_mode != "rw") or creds.permissions_path not in store.path:
+                    __record_audit(
+                        token, account.username,
+                        token_object.authenticated_user,
+                        file_path,
+                        store.store_type,
+                        store.id,
+                        "download",
+                        "",
+                        False,
+                        "Credentials do not match requirements"
+                    )
+
                     return flask.jsonify({"error": "Credentials do not match requirements"}), 403
+            try:
+                storage_provider = __get_storage_provider(account.email_address, store, store.store_type)
+                success, binary_file_content = storage_provider.download(new_file_path)
+                encoded_file = base64.b64encode(binary_file_content)
+                __record_audit(
+                    token, account.username,
+                    token_object.authenticated_user,
+                    file_path,
+                    store.store_type,
+                    store.id,
+                    "download",
+                    "",
+                    True
+                )
+                return flask.jsonify({"b64_content": encoded_file})
 
-            if store.store_type == "dropbox":
-                success, binary_file_content = __download_dropbox(store, new_file_path)
-                if success:
-                    encoded_file = base64.b64encode(binary_file_content)
-                    return flask.jsonify({"b64_content": encoded_file})
-                else:
-                    return flask.jsonify({"error": "Dropbox could not return the file: " + new_file_path}), 404
+            except Exception as e:
+                error_message = "Unknown error from storage engine, %s" % str(e)
+                __record_audit(
+                    token, account.username,
+                    token_object.authenticated_user,
+                    file_path,
+                    store.store_type,
+                    store.id,
+                    "download",
+                    "",
+                    False,
+                    error_message
+                )
 
-            if store.store_type == "s3":
-                success, binary_file_content = __download_s3(store, new_file_path)
-                if success:
-                    encoded_file = base64.b64encode(binary_file_content)
-                    return flask.jsonify({"b64_content": encoded_file})
-                else:
-                    return flask.jsonify({"error": "S3 could not return the file: " + new_file_path}), 404
-
-            if store.store_type == "webdav":
-                success, binary_file_content = __download_webdav(store, new_file_path)
-                if success:
-                    encoded_file = base64.b64encode(binary_file_content)
-                    return flask.jsonify({"b64_content": encoded_file})
-                else:
-                    return flask.jsonify({"error": "Webdav could not return the file: " + new_file_path}), 404
-
-            if store.store_type == "hosted":
-                success, binary_file_content = __download_hosted_s3(account.email_address, new_file_path)
-                if success:
-                    encoded_file = base64.b64encode(binary_file_content)
-                    return flask.jsonify({"b64_content": encoded_file})
-                else:
-                    return flask.jsonify({"error": "S3 could not return the file: " + new_file_path}), 404
+                return flask.jsonify({"error": error_message}), 403
 
     return flask.jsonify({})

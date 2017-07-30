@@ -239,6 +239,8 @@ def manage_storage_get():
             "endpoint__webdav_hostname": storage_item.endpoint__webdav_hostname,
             "endpoint__webdav_path": storage_item.endpoint__webdav_path,
             "endpoint__webdav_protocol": storage_item.endpoint__webdav_protocol,
+            "endpoint__googledrive_credentials": storage_item.endpoint__googledrive_credentials,
+            "endpoint__googledrive_credentials_active": not not storage_item.endpoint__googledrive_credentials,
         }
 
         ret.append(elem)
@@ -280,6 +282,9 @@ def manage_storage_set():
         storage_entry.endpoint__webdav_path = data.get("endpoint__webdav_path")
     if data.get("endpoint__webdav_protocol"):
         storage_entry.endpoint__webdav_protocol = data.get("endpoint__webdav_protocol")
+
+    if data.get("endpoint__googledrive_credentials"):
+        storage_entry.endpoint__googledrive_credentials = data.get("endpoint__googledrive_credentials")
 
     storage_entry.store_type = data.get("store_type")
     storage_entry.path = data.get("path")

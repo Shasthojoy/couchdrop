@@ -54,6 +54,11 @@ class File(Base):
     time = Column(DATETIME)
     authenticated_user = Column(String)
     storage_engine = Column(String)
+    storage_engine_id = Column(String)
+    event_type = Column(String)
+    ip_address = Column(String)
+    success=Column(Boolean)
+    additional_info=Column(String)
 
     def __init__(self):
         pass
@@ -91,3 +96,5 @@ class Storage(Base):
     endpoint__webdav_hostname = Column(String)
     endpoint__webdav_path = Column(String)
     endpoint__webdav_protocol = Column(String)
+
+    endpoint__googledrive_credentials = Column(String)

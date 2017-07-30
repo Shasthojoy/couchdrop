@@ -26,39 +26,17 @@
     </div>
     {% endif %}
 
-    <style>
-        .infobox {
-            border: 1px solid #e7e7e7;
-            background-color: #F7F7F7;
-            border-radius: 3px;
-            margin-left: 10px;
-            margin-right: 10px;
-            padding-top: 30px;
-            padding-bottom: 30px;
-        }
-
-        .infobox > .metric {
-            font-size: 33px;
-            text-align: center;
-        }
-
-        .infobox > .desc {
-            font-size: 15px;
-            text-align: center;
-        }
-    </style>
-
     {% if audit | length > 0 %}
     <div class="mui-row">
         <div class="mui-col-md-11 ">
             <div class="mui-row">
                 <div class="mui-col-md-4 infobox">
                     <div class="metric">{{ audit | length}}</div>
-                    <div class="desc">Files Uploaded</div>
+                    <div class="desc">Files Operations</div>
                 </div>
                 <div class="mui-col-md-4 infobox">
-                    <div class="metric">{{ credentials | length}}</div>
-                    <div class="desc">Credential Sets</div>
+                    <div class="metric">{{ credentials | length + 1}}</div>
+                    <div class="desc">User Account/Keysets</div>
                 </div>
                 <div class="mui-col-md-4">
                 </div>
@@ -69,7 +47,7 @@
 
     <div class="mui-row">
         <div class="mui-col-md-11 ">
-            <h2><i class="fa fa-bars"></i> Logs and Activity</h2>
+            <h3><i class="fa fa-bars"></i> Logs and Activity</h3>
             <hr>
 
             {% if audit | length == 0 %}
@@ -87,6 +65,7 @@
                 <thead>
                 <tr>
                     <th>File</th>
+                    <th>Event</th>
                     <th>Storage</th>
                     <th>Time</th>
                     <th>Account</th>
@@ -95,8 +74,52 @@
                 <tbody>
                 {% for entry in audit %}
                 <tr>
-                    <td><a href="/download/{{entry.id}}">{{entry.filename}}</a></td>
-                    <td>{{entry.storage_engine}}</td>
+                    <td>
+                        <a href="/download/{{entry.id}}">
+                            {{entry.filename}}
+                        </a>
+                    </td>
+                    <td>
+                        {% if entry.storage_engine == "email" %}
+                        <div class="upload"><i class="fa fa-envelope" aria-hidden="true"></i> file emailed</div>
+                        {% else %}
+                        {%if entry.event_type == "upload" and not entry.success %}
+                        <div class="upload" title="{{entry.additional_info}}"><i class="fa fa-upload failed" aria-hidden="true"></i> upload attempted</div>
+                        {%endif%}
+                        {%if entry.event_type == "upload" and entry.success %}
+                        <div class="upload" title="{{entry.additional_info}}"><i class="fa fa-upload" aria-hidden="true"></i> uploaded</div>
+                        {%endif%}
+                        {%if entry.event_type == "download" and not entry.success%}
+                        <div class="download" title="{{entry.additional_info}}"><i class="fa fa-download failed" aria-hidden="true"></i> download attempted</div>
+                        {%endif%}
+                        {%if entry.event_type == "download" and entry.success%}
+                        <div class="download" title="{{entry.additional_info}}"><i class="fa fa-download" aria-hidden="true"></i> downloaded</div>
+                        {%endif%}
+                        {%endif%}
+
+                    </td>
+                    <td>
+                        <div class="storage_engine">
+                            {% if entry.storage_engine == "googledrive" %}
+                            <i class="fa fa-google" aria-hidden="true"></i>
+                            {%endif%}
+                            {% if entry.storage_engine == "dropbox" %}
+                            <i class="fa fa-dropbox" aria-hidden="true"></i>
+                            {%endif%}
+                            {% if entry.storage_engine == "hosted" %}
+                            <i class="fa fa-hdd" aria-hidden="true"></i>
+                            {%endif%}
+                            {% if entry.storage_engine == "s3" %}
+                            <i class="fa fa-amazon" aria-hidden="true"></i>
+                            {%endif%}
+                            {% if entry.storage_engine == "webdav" %}
+                            <i class="fa fa-cloud" aria-hidden="true"></i>
+                            {%endif%}
+                            {% if entry.storage_engine == "email" %}
+                            <i class="fa fa-envelope" aria-hidden="true"></i>
+                            {%endif%}
+                        </div>
+                    </td>
                     <td>{{entry.time}}</td>
                     <td>{{entry.uploader}}</td>
                 </tr>
