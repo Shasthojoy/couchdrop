@@ -150,6 +150,13 @@ def register_subscription_subscribe_freeby():
     return redirect("/register/finish")
 
 
+@application.route("/register/subscription/subscribe/couchdrop")
+def register_subscription_subscribe_standard():
+    subscribe = "https://couchdrop.chargify.com/subscribe/w8pprkqykyyp/couchdrop?email=%s" % request.args.get(
+        "email")
+    return redirect(subscribe)
+
+
 @application.route("/register/subscription/subscribe/couchdrop_standard")
 def register_subscription_subscribe_standard():
     subscribe = "https://couchdrop.chargify.com/subscribe/v3qy4vdvyqnv/couchdrop_standard?email=%s" % request.args.get(
