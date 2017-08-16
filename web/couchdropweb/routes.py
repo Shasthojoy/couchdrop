@@ -367,6 +367,17 @@ def dropbox_auth_finish():
     return redirect("/buckets")
 
 
+@application.route("/account/subscription/subscribe/couchdrop")
+@login_required
+def account_subscription_subscribe():
+    account = middleware.api__get_account(flask.g.current_user.get_id())
+    if account.get("subscription_url"):
+        return redirect(account["subscription_url"])
+
+    subscribe = "https://couchdrop.chargify.com/subscribe/w8pprkqykyyp/couchdrop?email=%s" % account[
+        "email_address"]
+    return redirect(subscribe)
+
 @application.route("/account/subscription/subscribe/couchdrop_standard")
 @login_required
 def account_subscription_subscribe_standard():
@@ -389,6 +400,16 @@ def account_subscription_subscribe_premium():
     subscribe = "https://couchdrop.chargify.com/subscribe/g3dfxnbxbcr7/couchdrop_premium?email=%s" % account[
         "email_address"]
     return redirect(subscribe)
+
+
+@application.route("/account/subscription/subscribe/couchdrop/save")
+def account_subscription_subscribe_save():
+    if current_user.is_authenticated():
+        account = middleware.api__get_account(flask.g.current_user.get_id())
+        middleware.api__set_account(flask.g.current_user.get_id(), account)
+        return redirect("/account")
+    if not current_user.is_authenticated():
+        return redirect("/register/finish")
 
 
 @application.route("/account/subscription/subscribe/couchdrop_premium/save")
