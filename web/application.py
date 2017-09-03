@@ -17,4 +17,7 @@ if __name__ == "__main__":
 
     os.environ["COUCHDROP_WEB__FLASK_SESSION_SECRET"] = "-"
 
+    os.environ["COUCHDROP_WEB__STRIPE_PUBLISHABLE_KEY"] = "pk_test_zJ04wHDJQFHoVVmEQnwaIqBr"
+    os.environ["COUCHDROP_WEB__STRIPE_SECRET_KEY"] = "sk_test_6PYNINhnw0Cukzqdfc7SSVxN"
+
     application.run(host='0.0.0.0', port=5089, debug=True, threaded=True)

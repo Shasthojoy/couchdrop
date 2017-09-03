@@ -59,8 +59,8 @@ def __check_capture():
 def login():
     if request.method == "POST":
         try:
-            if not __check_capture():
-                return redirect("/login")
+            # if not __check_capture():
+            #     return redirect("/login")
 
             authentication_token = middleware.authenticate(request.form.get("email"), request.form.get("password"))
             if authentication_token is not None:
@@ -113,17 +113,17 @@ def register_get():
 
 @application.route("/register", methods=["POST"])
 def register_save():
-    if not __check_capture():
-        return redirect("/register")
+    # if not __check_capture():
+    #     return redirect("/register")
 
     register_result = middleware.register(
-        request.form.get("email"), request.form.get("password"), request.form.get("real_email_address")
+        request.form.get("email"), request.form.get("password"), request.form.get("real_email_address"),
+        request.form.get("subscription_type"), request.form.get("stripeToken")
     )
 
     if not register_result:
         flash("User creation failed, user already exists or another error was encountered")
         return redirect("/register")
-
     return redirect("/register/awaitingconfirm")
 
 
@@ -137,38 +137,7 @@ def register_awaiting_confirm_confirm_code(confirm_code):
     account = middleware.register_confirm(confirm_code)
     if not account:
         return "FAILED"
-    return redirect("/register/subscription?email=" + account["email_address"])
-
-
-@application.route("/register/subscription", methods=["GET"])
-def register_subscription():
-    return render_template("login__register_subscribe.html", email=request.args.get("email"))
-
-
-@application.route("/register/subscription/subscribe/freeby")
-def register_subscription_subscribe_freeby():
     return redirect("/register/finish")
-
-
-@application.route("/register/subscription/subscribe/couchdrop")
-def register_subscription_subscribe():
-    subscribe = "https://couchdrop.chargify.com/subscribe/w8pprkqykyyp/couchdrop?email=%s" % request.args.get(
-        "email")
-    return redirect(subscribe)
-
-
-@application.route("/register/subscription/subscribe/couchdrop_standard")
-def register_subscription_subscribe_standard():
-    subscribe = "https://couchdrop.chargify.com/subscribe/v3qy4vdvyqnv/couchdrop_standard?email=%s" % request.args.get(
-        "email")
-    return redirect(subscribe)
-
-
-@application.route("/register/subscription/subscribe/couchdrop_premium")
-def register_subscription_subscribe_premium():
-    subscribe = "https://couchdrop.chargify.com/subscribe/g3dfxnbxbcr7/couchdrop_premium?email=%s" % request.args.get(
-        "email")
-    return redirect(subscribe)
 
 
 @application.route("/register/finish", methods=["GET"])
@@ -256,6 +225,16 @@ def downloadfile(file_id):
 @login_required
 def account():
     account = middleware.api__get_account(flask.g.current_user.get_id())
+
+    # If there is a subscription, check the stripe details to make sure its valid and then use this info
+    subscription__status = False
+
+    stripe_customer = account["stripe__customer"]
+    for subscription in stripe_customer["subscriptions"]["data"]:
+        if subscription["plan"]["name"] == account["subscription_type"]:
+            subscription__status = subscription["status"]
+    account["subscription_status"] = subscription__status
+
     if request.method == "POST":
         if request.form.get("password") and request.form.get("password") == request.form.get("password2"):
             account["password"] = request.form.get("password")
@@ -374,73 +353,20 @@ def dropbox_auth_finish():
     return redirect("/buckets")
 
 
-@application.route("/account/subscription/subscribe/couchdrop")
+@application.route("/account/subscription", methods=["POST"])
 @login_required
-def account_subscription_subscribe():
-    account = middleware.api__get_account(flask.g.current_user.get_id())
-    if account.get("subscription_url"):
-        return redirect(account["subscription_url"])
+def account_subscription_save():
+    subscription_type = request.form.get("subscription_type")
+    stripe_token = request.form.get("stripeToken")
 
-    subscribe = "https://couchdrop.chargify.com/subscribe/w8pprkqykyyp/couchdrop?email=%s" % account[
-        "email_address"]
-    return redirect(subscribe)
-
-@application.route("/account/subscription/subscribe/couchdrop_standard")
-@login_required
-def account_subscription_subscribe_standard():
-    account = middleware.api__get_account(flask.g.current_user.get_id())
-    if account.get("subscription_url"):
-        return redirect(account["subscription_url"])
-
-    subscribe = "https://couchdrop.chargify.com/subscribe/v3qy4vdvyqnv/couchdrop_standard?email=%s" % account[
-        "email_address"]
-    return redirect(subscribe)
-
-
-@application.route("/account/subscription/subscribe/couchdrop_premium")
-@login_required
-def account_subscription_subscribe_premium():
-    account = middleware.api__get_account(flask.g.current_user.get_id())
-    if account.get("subscription_url"):
-        return redirect(account["subscription_url"])
-
-    subscribe = "https://couchdrop.chargify.com/subscribe/g3dfxnbxbcr7/couchdrop_premium?email=%s" % account[
-        "email_address"]
-    return redirect(subscribe)
-
-
-@application.route("/account/subscription/subscribe/couchdrop/save")
-def account_subscription_subscribe_save():
-    if current_user.is_authenticated():
-        account = middleware.api__get_account(flask.g.current_user.get_id())
-        middleware.api__set_account(flask.g.current_user.get_id(), account)
-        return redirect("/account")
-    if not current_user.is_authenticated():
-        return redirect("/register/finish")
-
-
-@application.route("/account/subscription/subscribe/couchdrop_premium/save")
-def account_subscription_subscribe_save_premium():
-    if current_user.is_authenticated():
-        account = middleware.api__get_account(flask.g.current_user.get_id())
-        middleware.api__set_account(flask.g.current_user.get_id(), account)
-        return redirect("/account")
-    if not current_user.is_authenticated():
-        return redirect("/register/finish")
-
-
-@application.route("/account/subscription/subscribe/couchdrop_standard/save")
-def account_subscription_subscribe_save_standard():
-    if current_user.is_authenticated():
-        account = middleware.api__get_account(flask.g.current_user.get_id())
-        middleware.api__set_account(flask.g.current_user.get_id(), account)
-        return redirect("/account")
-    if not current_user.is_authenticated():
-        return redirect("/register/finish")
+    middleware.api__update_subscription(flask.g.current_user.get_id(), subscription_type, stripe_token)
+    return redirect("/account")
 
 
 @application.before_request
 def before_request():
+    flask.g.stripe_token = os.environ["COUCHDROP_WEB__STRIPE_PUBLISHABLE_KEY"]
+
     if current_user.is_authenticated() and request.endpoint != 'login':
         flask.g.username = session.get("username")
 

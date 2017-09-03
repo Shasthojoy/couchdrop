@@ -27,6 +27,7 @@ class Account(Base):
     endpoint__dropbox_user_id = Column(String)
 
     endpoint__valid_public_key = Column(String)
+    stripe_customer_id = Column(String)
 
     def __init__(self):
         pass

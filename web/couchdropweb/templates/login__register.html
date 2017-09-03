@@ -1,13 +1,73 @@
 {% extends "login.html" %}
 {% block body %}
 
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    $(function () {
+        var stripe = Stripe('{{ g.stripe_token }}');
+        var elements = stripe.elements();
+
+        var style = {
+            base: {
+                // Add your base input styles here. For example:
+                fontSize: '16px',
+                lineHeight: '24px'
+            }
+        };
+
+        // Create an instance of the card Element
+        var card = elements.create('card', {style: style});
+
+        // Add an instance of the card Element into the `card-element` <div>
+        card.mount('#card-element');
+
+        var form = document.getElementById('signup_form');
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            if ($("#subscription_type").val() == "freeby") {
+                form.submit();
+            } else {
+                stripe.createToken(card).then(function (result) {
+                    if (result.error) {
+                        // Inform the user if there was an error
+                        var errorElement = document.getElementById('card-errors');
+                        errorElement.textContent = result.error.message;
+                    } else {
+                        // Send the token to your server
+                        console.log("TOKEN: ");
+                        console.log(result.token);
+
+                        var form = document.getElementById('signup_form');
+                        var hiddenInput = document.createElement('input');
+                        hiddenInput.setAttribute('type', 'hidden');
+                        hiddenInput.setAttribute('name', 'stripeToken');
+                        hiddenInput.setAttribute('value', result.token.id);
+                        form.appendChild(hiddenInput);
+                        form.submit();
+                    }
+                });
+            }
+        });
+
+        $("#subscription_type").change(function () {
+            if ($("#subscription_type").val() == "freeby") {
+                $("#cc_form").hide();
+            } else {
+                $("#cc_form").show();
+            }
+        });
+    })
+</script>
+
 <div class="mui-col-md-4 mui-col-sm-offset-6">
     <div>
     </div>
     <h3>Get Started with Couchdrop Now</h3>
-    <div>Sign up for Couchdrop, the cloud SCP server and get moving files in minutes. If you already have an account, click <a href="/login">here</a></div>
+    <div>Sign up for Couchdrop, the cloud SCP server and get moving files in minutes. If you already have an account,
+        click <a href="/login">here</a></div>
     <br>
-    <form action="/register" method="POST">
+    <form action="/register" method="POST" id="signup_form">
         <div class="mui-textfield">
             <input type="text" name="email" placeholder="Username" required>
         </div>
@@ -20,7 +80,33 @@
         <div class="mui-textfield">
             <input type="password" name="password" placeholder="Re Password" required>
         </div>
-        <div>Signing up signifies that you have read and agree to the <a href="https://couchdrop.io/privacy">Terms of Service and our Privacy Policy</a>.</div>
+
+        <br><br>
+        <div class="mui-select">
+            <select name="subscription_type" id="subscription_type">
+                <option value="freeby">Freeby</option>
+                <option value="couchdrop_standard" selected>Couchdrop Standard $5.99 USD per month</option>
+                <option value="couchdrop_premium">Couchdrop Premium $25.00 USD per month</option>
+            </select>
+            <label>Subscription Type</label>
+        </div>
+
+        <div class="form-row" id="cc_form">
+            <label for="card-element">
+                Credit or debit card
+            </label>
+            <div id="card-element">
+                <!-- a Stripe Element will be inserted here. -->
+            </div>
+
+            <!-- Used to display Element errors -->
+            <div id="card-errors" role="alert"></div>
+        </div>
+
+        <br><br>
+        <div>Signing up signifies that you have read and agree to the <a href="https://couchdrop.io/privacy">Terms of
+            Service and our Privacy Policy</a>. For more information please contact michael@couchdrop.io</a>.
+        </div>
         <br>
         <div class="g-recaptcha" data-sitekey="6LebbikUAAAAAC0o-oyYtxT8plw3k0EQINZdsuG5"></div>
         <br>

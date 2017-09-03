@@ -35,10 +35,16 @@ def authenticate(username, password):
     return None
 
 
-def register(username, password, email_address):
+def register(username, password, email_address, subscription_type, stripe_token):
     ret = requests.post(
         config__get("COUCHDROP_WEB__API_URL") + "/register",
-        data=dict(username=username, password=password, email_address=email_address)
+        data=dict(
+            username=username,
+            password=password,
+            email_address=email_address,
+            subscription_type=subscription_type,
+            stripe_token=stripe_token
+        )
     )
 
     return ret.status_code == 200
@@ -112,6 +118,15 @@ def api__post_storage(token, bucket):
     requests.post(
         config__get("COUCHDROP_WEB__API_URL") + "/manage/account/storage?token=" + token,
         data=json.dumps(bucket)
+    )
+
+def api__update_subscription(token, subscription_type, stripe_token):
+    requests.post(
+        config__get("COUCHDROP_WEB__API_URL") + "/manage/account/subscription?token=" + token,
+        data=json.dumps({
+            "subscription_type" : subscription_type,
+            "stripe_token" : stripe_token,
+        })
     )
 
 def api__delete_storage(token, id):

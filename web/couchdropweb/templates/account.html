@@ -1,8 +1,69 @@
 {% extends "base.html" %}
 {% block body %}
 
+<script src="https://js.stripe.com/v3/"></script>
+
 <script>
     window.toggle_nav("accounts_link");
+</script>
+
+<script>
+    $(function () {
+        var stripe = Stripe('{{ g.stripe_token }}');
+        var elements = stripe.elements();
+
+        var style = {
+            base: {
+                fontSize: '16px',
+                lineHeight: '24px'
+            }
+        };
+
+        var card = elements.create('card', {style: style});
+        card.mount('#card-element');
+
+        var form = document.getElementById('subscription_form');
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            if($("#subscription_type").val() == "freeby"){
+                form.submit();
+            }else{
+                stripe.createToken(card).then(function (result) {
+                    if (result.error) {
+                        // Inform the user if there was an error
+                        var errorElement = document.getElementById('card-errors');
+                        errorElement.textContent = result.error.message;
+                    } else {
+                        // Send the token to your server
+                        var form = document.getElementById('subscription_form');
+                        var hiddenInput = document.createElement('input');
+                        hiddenInput.setAttribute('type', 'hidden');
+                        hiddenInput.setAttribute('name', 'stripeToken');
+                        hiddenInput.setAttribute('value', result.token.id);
+                        form.appendChild(hiddenInput);
+                        form.submit();
+                    }
+                });
+            }
+
+        });
+
+        function update_subscription_type(){
+            if ($("#subscription_type").val() == "freeby"){
+                $("#cc_form").hide();
+            }else{
+                $("#cc_form").show();
+            }
+        }
+
+        $("#subscription_type").change(function(){
+            update_subscription_type()
+        });
+
+        $("#subscription_type").val("{{account.subscription_type}}");
+        update_subscription_type();
+    })
 </script>
 
 <div class="lowernav">
@@ -35,88 +96,49 @@
             </div>
 
             <div class="mui-panel">
-                <form method="post">
-                    <legend>Account Subscription</legend>
-                    <div>Hosted Plan Name: {{account.subscription_type}}</div>
+                <form method="post" id="subscription_form" action="/account/subscription">
+                    <legend>Subscription</legend>
 
-                    {% if account.subscription_type != 'freeby' %}
-                    <div>Make changes to your Subscription: <a href="{{account.subscription_url}}">Manage
-                        Subscription</a></div>
-                    {% endif %}
+                    <div>
+                        <div>Subscription Type: {{account.subscription_type}}</div>
+                        {% if account.subscription_type == 'freeby' %}
+                        <div>You are currently using a free account. To unlock your Couchdrop Account and support our
+                            development, upgrade your account.
+                        </div>
+                        {% endif %}
+
+                        {% if account.subscription_type != 'freeby' %}
+                        <div>Subscription Status: {{account.subscription_status}}</div>
+                        {% endif %}
+                    </div>
 
                     <br>
-                    {% if account.subscription_type == 'freeby' %}
-                    <div>You are currently using a free account. To unlock your Couchdrop Account and support our
-                        development, upgrade your account.
+
+                    <h4>Modify Subscription</h4>
+                    <br>
+                    <div class="mui-select">
+                        <select name="subscription_type" id="subscription_type">
+                            <option value="freeby">Freeby + $0.00 per month</option>
+                            <option value="couchdrop_standard">Couchdrop Standard + $5.99 per month</option>
+                            <option value="couchdrop_premium">Couchdrop Premium + $25.00 per month</option>
+                        </select>
+                        <label>Subscription Type</label>
                     </div>
 
-                    <div class="plans">
-                        <div class="plan plan_freeby">
-                            <div class="plan_title"><h3>Freeby</h3></div>
-                            <hr>
-                            <div class="plan_details">
-                                <div class="plan_row">500 Uploads per month</div>
-                                <div class="plan_row">Unlimited downloads</div>
-                                <div class="plan_row">5 Storage Providers</div>
-                                <div class="plan_row">5 Accounts and Keysets</div>
-                                <div class="plan_row">Email Support</div>
-                            </div>
-                            <hr>
-                            <div class="plan_price">
-                                <h3>0.00</h3> USD Per Month</small>
-                            </div>
-                            <div class="plan_change">
-                                <a href="/account/subscription/subscribe/freeby"
-                                   class="mui-btn mui-btn--primary">Subscribe</a>
-                            </div>
-
+                    <div id="cc_form" class="form-row">
+                        <label for="card-element">
+                            Credit or debit card
+                        </label>
+                        <div id="card-element">
+                            <!-- a Stripe Element will be inserted here. -->
                         </div>
-                        <div class="plan plan_standard">
-                            <div class="plan_title"><h3>Couchdrop Standard</h3></div>
-                            <hr>
 
-                            <div class="plan_details">
-                                <div class="plan_row">Unlimited Uploads</div>
-                                <div class="plan_row">Unlimited downloads</div>
-                                <div class="plan_row">5 Storage Providers</div>
-                                <div class="plan_row">5 Accounts and Keysets</div>
-                                <div class="plan_row">Email Support</div>
-                                <div class="plan_row">200Gb of Storage</div>
-                            </div>
-
-                            <hr>
-                            <div class="plan_price">
-                                <h3>$5.00</h3> USD Per Month / <small>Free for students</small>
-                            </div>
-                            <div class="plan_change">
-                                <a href="/account/subscription/subscribe/couchdrop_standard"
-                                   class="mui-btn mui-btn--primary">Subscribe</a>
-                            </div>
-                        </div>
-                        <div class="plan plan_gold">
-                            <div class="plan_title"><h3>Couchdrop Gold</h3></div>
-                            <hr>
-
-                            <div class="plan_details">
-                                <div class="plan_row">Unlimited Uploads per month</div>
-                                <div class="plan_row">Unlimited downloads</div>
-                                <div class="plan_row">Unlimited Storage Providers</div>
-                                <div class="plan_row">Unlimited Accounts and Keysets</div>
-                                <div class="plan_row">Unlimited Email Support</div>
-                                <div class="plan_row">1Tb of Storage</div>
-                            </div>
-                            <hr>
-                            <div class="plan_price">
-                                <h3>$25.00</h3>USD Per Month
-                            </div>
-                            <div class="plan_change">
-                                <a href="/account/subscription/subscribe/couchdrop_premium"
-                                   class="mui-btn mui-btn--primary">Subscribe</a>
-                            </div>
-                        </div>
+                        <!-- Used to display Element errors -->
+                        <div id="card-errors" role="alert"></div>
                     </div>
-                    {% endif %}
-                    <br><br>
+
+                    <br>
+                    <button type="submit" class="mui-btn mui-btn--raised">Update Subscription</button>
                 </form>
             </div>
         </div>

@@ -103,4 +103,5 @@ alter table audit add column success bool default true;
 alter table audit add column additional_info varchar(5000) default '';
 
 alter table accounts add column created_time TIMESTAMP  default now();
+alter table accounts add column stripe_customer_id varchar(100)  default '';
 

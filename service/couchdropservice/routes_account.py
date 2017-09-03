@@ -7,7 +7,10 @@ from flask.globals import request
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from couchdropservice import application, config__get
+from couchdropservice.middleware import stripe_api
 from couchdropservice.middleware.email_sender import mandrill__email_confirm__email, mandrill__email_password_reset
+from couchdropservice.middleware.stripe_api import stripe__subscribe_customer, stripe__get_customer, \
+    stripe__cancel_existing_subscriptions
 from couchdropservice.model import Account, PushToken, TempCredentials, Storage
 
 
@@ -100,8 +103,6 @@ def register():
     password = request.form.get("password")
 
     #Sanitise username
-
-
     account = flask.g.db_session.query(Account).filter(Account.email_address == email_address).scalar()
     if account:
         return flask.jsonify(err="Email already exists"), 403
@@ -117,11 +118,19 @@ def register():
     new_account.password = generate_password_hash(password)
     new_account.email_confirmation_code = str(uuid.uuid4())
     new_account.email_confirmation_code_accepted = False
-    flask.g.db_session.add(new_account)
 
+    stripe_customer = stripe_api.stripe__create_customer(email_address)
+    if stripe_customer:
+        new_account.stripe_customer_id = stripe_customer["id"]
+        if request.form.get("subscription_type") != "freeby":
+            stripe__subscribe_customer(new_account.stripe_customer_id, request.form.get("stripe_token"), request.form.get("subscription_type"))
+        new_account.subscription_type = request.form.get("subscription_type")
+
+    flask.g.db_session.add(new_account)
     mandrill__email_confirm__email(
         new_account.email_address, new_account.email_address, new_account.email_confirmation_code
     )
+
     return flask.jsonify({}), 200
 
 
@@ -182,14 +191,15 @@ def manage_authenticate():
         "username": account.username,
         "email_address": account.email_address,
         "subscription_type": account.subscription_type,
-        "endpoint__valid_public_key": account.endpoint__valid_public_key
+        "endpoint__valid_public_key": account.endpoint__valid_public_key,
     }
 
+    ret["stripe__customer"] = stripe__get_customer(account.stripe_customer_id)
     from couchdropservice.middleware.chargify_provider import chargify__get_subscription_info
-    subscription, subscription_link = chargify__get_subscription_info(account.email_address)
-    if subscription:
-        ret["subscription_type"] = subscription
-        ret["subscription_url"] = subscription_link
+    # subscription, subscription_link = chargify__get_subscription_info(account.email_address)
+    # if subscription:
+    #     ret["subscription_type"] = subscription
+    #     ret["subscription_url"] = subscription_link
     return flask.jsonify(account=ret)
 
 
@@ -209,6 +219,35 @@ def manage_authenticate_post():
         account.email_address = data.get("email_address")
     if data.get("endpoint__valid_public_key"):
         account.endpoint__valid_public_key = data.get("endpoint__valid_public_key")
+    return flask.jsonify({})
+
+
+@application.route("/manage/account/subscription", methods=["POST"])
+def manage_account_subscription_post():
+    token = request.args.get("token")
+    token_object = flask.g.db_session.query(PushToken).filter(PushToken.token == token).scalar()
+    if not token_object or not token_object.admin:
+        return flask.jsonify(err="Token was not valid"), 403
+
+    account = flask.g.db_session.query(Account).filter(Account.username == token_object.account).scalar()
+    data = json.loads(request.data)
+    if account.subscription_type == data.get("subscription_type"):
+        # subscription is already the same
+        pass
+    else:
+        # subscription needs changing so lets change it
+        if data.get("subscription_type") == "freeby":
+            stripe__cancel_existing_subscriptions(account.stripe_customer_id)
+        elif data.get("subscription_type") == "couchdrop_standard":
+            stripe__subscribe_customer(
+                account.stripe_customer_id, data.get("stripe_token"), data.get("subscription_type")
+            )
+        elif data.get("subscription_type") == "couchdrop_premium":
+            stripe__subscribe_customer(
+                account.stripe_customer_id, data.get("stripe_token"), data.get("subscription_type")
+            )
+
+        account.subscription_type = data.get("subscription_type")
     return flask.jsonify({})
 
 
