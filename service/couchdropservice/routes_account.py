@@ -194,11 +194,12 @@ def manage_authenticate():
         "endpoint__valid_public_key": account.endpoint__valid_public_key,
     }
 
-    try:
-        ret["stripe__customer"] = stripe__get_customer(account.stripe_customer_id)
-    except:
-        pass
+    if not account.stripe_customer_id:
+        stripe_customer = stripe_api.stripe__create_customer(account.email_address)
+        if stripe_customer:
+            account.stripe_customer_id = stripe_customer["id"]
 
+    ret["stripe__customer"] = stripe__get_customer(account.stripe_customer_id)
     return flask.jsonify(account=ret)
 
 
