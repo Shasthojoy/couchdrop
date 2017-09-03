@@ -22,6 +22,7 @@ COPY . /app
 RUN cd /app/endpoints/ssh && mvn assembly:assembly
 COPY env/supervisor-app.conf /etc/supervisor/conf.d/
 COPY env/couchdrop-apache-lb.conf  /etc/apache2/sites-enabled/
+RUN rm /etc/apache2/sites-enabled/000-default.conf
 
 # Install the UWSGI applications
 RUN pip install uwsgi 
