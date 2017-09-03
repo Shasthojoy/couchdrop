@@ -3,8 +3,8 @@ import os
 from couchdropweb import application
 
 if __name__ == "__main__":
-    os.environ["COUCHDROP_API_URL"] = "http://localhost:5088"
-    os.environ["COUCHDROP_WEB__API_URL"] = "http://localhost:5088"
+    os.environ["COUCHDROP_API_URL"] = "https://api.couchdrop.io"
+    os.environ["COUCHDROP_WEB__API_URL"] = "https://api.couchdrop.io"
     os.environ["COUCHDROP_WEB__REDIRECT_URI"] = "http://localhost:5089"
     os.environ["COUCHDROP_WEB__RECAPTURE_SECRET"] = "--"
 
