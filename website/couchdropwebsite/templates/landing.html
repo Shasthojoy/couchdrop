@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CouchDrop</title>
+    <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <script type="text/javascript" src="{{ url_for('static', filename='libs/base.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='libs/jquery.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='libs/jquery.migrate.js') }}"></script>
+
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style/style.css') }}">
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="//cdn.muicss.com/mui-0.6.0/css/mui.min.css" rel="stylesheet" type="text/css"/>
+    <script src="//cdn.muicss.com/mui-0.6.0/js/mui.min.js"></script>
+
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet"
+          integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
+
+</head>
+<script>
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+                    (i[r].q = i[r].q || []).push(arguments)
+                }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-80547747-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+<body>
+<style>
+    html,
+    body {
+        height: 100%;
+    }
+
+    html,
+    body,
+    input,
+    textarea,
+    buttons {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.004);
+    }
+
+    /**
+     * Header CSS
+     */
+    header {
+        position: fixed;
+        top: 0;
+        right: 0;
+        left: 0;
+        z-index: 2;
+    }
+
+    /**
+     * Content CSS
+     */
+    #content-wrapper {
+        min-height: 100%;
+
+        /* sticky footer */
+        margin-bottom: -100px;
+        padding-bottom: 100px;
+    }
+
+    .mui-list--inline li a {
+        color: white;
+    }
+
+    /**
+     * Footer CSS
+     */
+    footer {
+        height: 100px;
+        border-top: 1px solid #e0e0e0;
+        padding-top: 35px;
+    }
+
+    #topnav {
+        padding-top: 20px;
+        padding-bottom: 10px;
+    }
+
+    #main-banner {
+        padding-top: 70px;
+        padding-bottom: 70px;
+        background-color: #eee;
+    }
+
+    .dark-area {
+        border-top: 1px #e5e5e5 solid !important;
+        background-color: #eee;
+    }
+
+    .dark-area .mui-row {
+        padding-top: 50px;
+        padding-bottom: 50px;
+    }
+
+    .fixed-height {
+        min-height: 50px;
+    }
+
+    .pill-heading {
+        font-size: 21px;
+        padding-bottom: 10px;
+        font-family: courier;
+    }
+
+    .pill-text {
+        font-size: 15px;
+    }
+
+    .normal-heading {
+        font-size: 21px;
+        padding-bottom: 10px;
+        font-family: courier;
+
+    }
+</style>
+
+<script>
+    window.open_login = function () {
+        window.location = "http://my.couchdrop.io";
+    }
+</script>
+
+<div class="mui-row">
+    <div class="mui-row" id="topnav">
+        <div class="mui-col-md-8 mui-col-sm-offset-2">
+            <div class="mui-row">
+                <div class="mui-col-md-4">
+                    <img style="max-height: 30px;" src="{{ url_for('static', filename='images/couchdroplogo.png') }}"/>
+                    <span style="font-size:15px;">couchdrop.io </span>
+                </div>
+                <div class="mui-col-md-4 mui-col-sm-offset-4">
+
+                    <div style="float:right;">
+                        <a href="http://my.couchdrop.io">Login</a> |
+                        <a href="https://couchdrophelp.zendesk.com/hc/en-us/sections/115002077107-Announcements">Announcements</a>
+                        |
+                        <a href="https://couchdrophelp.zendesk.com/hc/en-us/sections/115002077187-Using-Couchdrop">Documentation</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-banner" class="mui-row" style="">
+        <div class="mui-col-md-8 mui-col-sm-offset-2">
+            <div class="mui-row">
+                <div class="mui-col-md-12">
+                    <div id="content-wrapper" class="mui--text-center">
+                        <div class="mui--text-display3">meet couchdrop</div>
+                        <br>
+                        <h4>The secure, easy to use Cloud SCP file server.</h4>
+                        <br>
+                        <button onclick="window.open_login();" class="mui-btn mui-btn--raised">Get started</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mui-row" style="padding-top: 40px;padding-bottom: 20px;">
+        <div class="mui-col-md-8 mui-col-sm-offset-2">
+            <div class="mui-row">
+                <div class="mui-col-md-12">
+                    <center>
+                        Upload files securely to your cloud storage from Linux, Unix and OSX boxes without having
+                        to install any client software.
+                    </center>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <div class="mui-row" style="padding-top: 20px;padding-bottom: 20px;">
+        <div class="mui-col-md-8 mui-col-sm-offset-2">
+            <div class="mui-row">
+                <div class="mui-col-md-4 fixed-height">
+                    <div class="pill-heading text-blue">Files Delivered</div>
+                    <div class="pill-text">Upload and Download files directly into Dropbox, Google Drive, Amazon S3 or WebDAV using
+                        SSH SCP. From server direct to
+                        your desktop.
+                    </div>
+                </div>
+                <div class="mui-col-md-4 fixed-height">
+                    <div class="pill-heading text-orange">Security Built In</div>
+                    <div class="pill-text">Simple permissions, temporary users, files delivered directly to you.
+                    </div>
+                </div>
+                <div class="mui-col-md-4 fixed-height">
+                    <div class="pill-heading text-purple">Oneclick Setup</div>
+                    <div class="pill-text">No server provisioning, port forwarding, firewalling.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <div class="mui-row" style="padding-top: 20px;padding-bottom: 20px;">
+        <div class="mui-col-md-8 mui-col-sm-offset-2">
+            <div class="mui-row">
+                <div class="normal-heading">Uploading Files</div>
+                <div class="normal-text">Uploading files is remarkably easy, just SCP them directly to couchdrop and
+                    within minutes they will
+                    appear in your Dropbox, Google Drive or AWS S3 accounts. You can then download these files in AWS, Dropbox
+                    or
+                    from the
+                    my.couchdrop web interface.
+                </div>
+                <br><br>
+                <div class="mui-row">
+                    <div class="mui-col-md-8">
+                        <img style="margin-left:auto; margin-right:auto; max-width: 100%; display: block;"
+                             src="{{ url_for('static', filename='images/couchdrop_instructions.png') }}"/>
+                    </div>
+
+                    <div class="mui-col-md-4">
+                        <div class="normal-heading">Instructions</div>
+                        <div class="command">scp file username@ssh.couchdrop.io:</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <style>
+        .storage_logo {
+            max-width: 200px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+    </style>
+
+    <div class="mui-row" style="padding-top: 20px;padding-bottom: 20px;">
+        <div class="mui-col-md-8 mui-col-sm-offset-2">
+            <div class="mui-row">
+                <div class="normal-heading">Hook into Existing Cloud Storage</div>
+                <div class="normal-text">Couchdrop integrates with your existing cloud storage to provide a SCP front
+                    end for your Dropbox, GoogleDrive or other Storage Buckets
+                </div>
+                <br><br>
+                <div class="mui-row">
+                    <div class="mui-col-md-3">
+                        <img style="padding-top: 45px;" class="storage_logo"
+                             src="{{ url_for('static', filename='images/dropbox_blue.svg') }}"/>
+                    </div>
+                    <div class="mui-col-md-3">
+                        <img style="padding-top: 31px;" class="storage_logo"
+                             src="{{ url_for('static', filename='images/drive_white-large.png') }}"/>
+                    </div>
+                    <div class="mui-col-md-3">
+                        <img class="storage_logo" src="{{ url_for('static', filename='images/cloud-s3-2.png') }}"/>
+                    </div>
+
+                    <div class="mui-col-md-3">
+                        <img class="storage_logo" src="{{ url_for('static', filename='images/webdav.png') }}"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <div class="mui-row" style="padding-top: 20px;padding-bottom: 20px;">
+        <div class="mui-col-md-8 mui-col-sm-offset-2">
+            <div class="mui-row">
+                <div class="normal-heading">Hosted Storage</div>
+                <div class="normal-text">In addition to integration with Common Cloud Storage providers, Couchdrop
+                    offers secure storage for Standard and Premium users.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <div class="mui-row" style="padding-top: 20px;padding-bottom: 20px;">
+        <div class="mui-col-md-8 mui-col-sm-offset-2">
+            <div class="mui-row">
+                <div class="normal-heading">Pricing</div>
+                <div class="normal-text">Couchdrop is the cost of a coffee every month. If you are looking
+                    for Hosted storage we offer Couchdrop 200 and Couchdrop 1k. If you want to run Couchdrop on your own hardware for free
+                    checkout our Github <a href="https://github.com/bluewhale/couchdrop">page</a>.
+
+                    <div class="plans">
+                    <div class="plan plan_freeby">
+                        <div class="plan_title"><h3>Freeby</h3></div>
+                        <hr>
+                        <div class="plan_price">
+                            <h3>$0.00</h3> USD Per Month
+                        </div>
+
+                        <div class="plan_change">
+                            <a href="https://my.couchdrop.io/register"
+                               class="mui-btn mui-btn--primary">Subscribe</a>
+                        </div>
+
+                        <hr>
+                        <div class="plan_details">
+                            Standard account with unlimited reads and limited uploads/writes but no hosted storage.
+                        </div>
+                    </div>
+                    <div class="plan plan_standard">
+                        <div class="plan_title"><h3>Couchdrop Standard</h3></div>
+                        <hr>
+                        <div class="plan_price">
+                            <h3>$5.00</h3> USD Per Month / <small>Free for students</small>
+                            <br>
+
+                        </div>
+                        <div class="plan_change">
+                            <a href="https://my.couchdrop.io/register"
+                               class="mui-btn mui-btn--primary">Subscribe</a>
+                        </div>
+                        <hr>
+                        <div class="plan_details">
+                            Unlimited reads, unlimited Writes and <b>200GB</b> of Hosted Storage
+                        </div>
+
+                    </div>
+                    <div class="plan plan_freeby">
+                        <div class="plan_title"><h3>Couchdrop Gold</h3></div>
+                        <hr>
+                        <div class="plan_price">
+                            <h3>$25.00</h3>USD Per Month
+                        </div>
+                        <div class="plan_change">
+                            <a href="https://my.couchdrop.io/register"
+                               class="mui-btn mui-btn--primary">Subscribe</a>
+                        </div>
+                        <hr>
+                        <div class="plan_details">
+                            Premium account, no limits and <b>1TB</b> of Hosted Storage
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr>
+
+    <style>
+        .command {
+            background: #333;
+            color: white;
+            padding: 20px;
+            font-size: 15px;
+        }
+
+        .faq-question-title {
+            font-weight: bold;
+        }
+
+        .faq-question-answer {
+            color: gray;
+        }
+
+        .faq-question {
+            padding-bottom: 11px;
+            padding-top: 11px;
+        }
+
+        .text-blue {
+            color: #0079d1 !important
+        }
+
+        .text-orange {
+            color: #e8400d !important
+        }
+
+        .text-purple {
+            color: #7a3497 !important;
+        }
+    </style>
+    <div class="mui-row" style="padding-top: 20px;padding-bottom: 20px;">
+        <div class="mui-col-md-8 mui-col-sm-offset-2">
+            <div class="mui-row">
+                <a name="faqs"></a>
+                <div class="normal-heading">Frequently Asked Questions</div>
+                <div class="faq-question">
+                    <div class="faq-question-title">
+                        What is SCP?
+                    </div>
+                    <div class="faq-question-answer">
+                        SCP is a file transfer protocol coupled together with OpenSSH. It is more secure than FTP and is
+                        bundled by default with OSX, Unix and every Linux distribution.
+                        <br>
+                        <br>
+                        <a href="https://en.wikipedia.org/wiki/Secure_copy">https://en.wikipedia.org/wiki/Secure_copy</a>
+                    </div>
+                </div>
+
+                <div class="faq-question">
+                    <div class="faq-question-title">
+                        Is it secure?
+                    </div>
+                    <div class="faq-question-answer">
+                        Yes! Security is paramount and a key motivator behind creating Couchdrop. We don't store
+                        your
+                        files on our servers and never intend
+                        on doing this. Files are stored in your cloud storage or on our Hosted Storage with Amazon S3.
+                    </div>
+                </div>
+
+                <div class="faq-question">
+                    <div class="faq-question-title">
+                        Do we have to use Dropbox, Google Drive or Amazon AWS?
+                    </div>
+                    <div class="faq-question-answer">
+                        Couchdrop delivers files to your cloud storage provider rather than storing them on our
+                        servers.
+                        This means you can
+                        upload your files direct to your desktop from devices that do not support Dropbox or Amazon
+                        AWS
+                        storage and it's secure.
+                        <br>
+                        <br>
+                        If you are hankering for some Hosted storage, then our Standard and Premium plans both come with Storage.
+                    </div>
+                </div>
+
+                <div class="faq-question">
+                    <div class="faq-question-title">
+                        Is your product open source?
+                    </div>
+                    <div class="faq-question-answer">
+                        You put your trust in us, so we give something back to earn your trust. Trusting your files
+                        with a company always raises security concerns. That's why we have opensourced our product. Feel free
+                        to go through our implementation with a fine toothed comb.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<footer>
+    <div class="mui-container mui--text-center">
+        <div>
+            <span style="color:gray;">Couchdrop by Michael Lawson
+            <a href="mailto:michael@couchdrop.io">michael@couchdrop.io</a> Copyright 2017</span>
+            <a href="/privacy">Terms and Conditions</a>
+        </div>
+
+
+        <div><a style="" class="github-button" href="https://github.com/bluewhale/couchdrop/fork"
+                data-count-href="/bluewhale/couchdrop/network"
+                data-count-api="/repos/bluewhale/couchdrop#forks_count"
+                data-count-aria-label="# forks on GitHub"
+                aria-label="Fork bluewhale/couchdrop on GitHub">Fork</a></div>
+    </div>
+</footer>
+</body>
+</html>
