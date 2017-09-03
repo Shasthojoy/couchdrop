@@ -194,12 +194,11 @@ def manage_authenticate():
         "endpoint__valid_public_key": account.endpoint__valid_public_key,
     }
 
-    ret["stripe__customer"] = stripe__get_customer(account.stripe_customer_id)
-    from couchdropservice.middleware.chargify_provider import chargify__get_subscription_info
-    # subscription, subscription_link = chargify__get_subscription_info(account.email_address)
-    # if subscription:
-    #     ret["subscription_type"] = subscription
-    #     ret["subscription_url"] = subscription_link
+    try:
+        ret["stripe__customer"] = stripe__get_customer(account.stripe_customer_id)
+    except:
+        pass
+
     return flask.jsonify(account=ret)
 
 
